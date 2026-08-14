@@ -1,14 +1,82 @@
 {% extends 'core/base.html' %}
+
 {% block title %}Organization setup{% endblock %}
+
 {% block content %}
-<section class="hero-row"><div><p class="kicker">ORGANIZATION CONFIGURATION</p><h1>{{ organization.name }}</h1><p>{{ organization.description }}</p></div><a class="button primary" href="{% url 'new_onboarding' %}?organization={{ organization.slug }}">Test onboarding</a></section>
-<div class="tabs">{% for org in organizations %}<a class="{% if org == organization %}active{% endif %}" href="{% url 'organization_setup' org.slug %}">{{ org.name }}</a>{% endfor %}</div>
+<section class="hero-row">
+  <div>
+    <p class="kicker">ORGANIZATION CONFIGURATION</p>
+    <h1>{{ organization.name }}</h1>
+    <p>{{ organization.description }}</p>
+  </div>
+  <a class="button primary" href="{% url 'new_onboarding' %}?organization={{ organization.slug }}">
+    Test onboarding
+  </a>
+</section>
+
+<div class="tabs">
+  {% for org in organizations %}
+  <a class="{% if org == organization %}active{% endif %}" href="{% url 'organization_setup' org.slug %}">
+    {{ org.name }}
+  </a>
+  {% endfor %}
+</div>
+
 <div class="setup-grid">
-  <section class="panel setup-card"><div class="card-head"><div><p class="kicker">GENERATED WORKFLOW</p><h2>What the agent will do</h2></div><span class="badge">{{ organization.workflow|length }} actions</span></div>
-    <div class="workflow-list">{% for step in organization.workflow %}<div class="workflow-row"><span class="step-number">{{ forloop.counter }}</span><div><strong>{{ step.title }}</strong><small><code>{{ step.capability }}</code> via {{ step.tool }}</small></div><span class="drag">⋮⋮</span></div>{% endfor %}</div>
+  <section class="panel setup-card">
+    <div class="card-head">
+      <div>
+        <p class="kicker">GENERATED WORKFLOW</p>
+        <h2>What the agent will do</h2>
+      </div>
+      <span class="badge">{{ organization.workflow|length }} actions</span>
+    </div>
+
+    <div class="workflow-list">
+      {% for step in organization.workflow %}
+      <div class="workflow-row">
+        <span class="step-number">{{ forloop.counter }}</span>
+        <div>
+          <strong>{{ step.title }}</strong>
+          <small><code>{{ step.capability }}</code> via {{ step.tool }}</small>
+        </div>
+        <span class="drag">⋮⋮</span>
+      </div>
+      {% endfor %}
+    </div>
   </section>
-  <aside><section class="panel side-card"><p class="kicker">REQUIRED INFORMATION</p><div class="field-chips">{% for field in organization.required_fields %}<span>{{ field|title }} <b>required</b></span>{% endfor %}</div></section>
-    <section class="panel side-card"><div class="card-head"><p class="kicker">CONNECTED TOOLS</p><span class="health">Healthy</span></div>{% for integration in organization.integrations %}<div class="integration"><span class="integration-icon">{% if 'Google' in integration.type or integration.type == 'Drive' %}G{% else %}↗{% endif %}</span><div><strong>{{ integration.name }}</strong><small>{{ integration.type }}</small></div><span class="status {{ integration.status }}"><i></i>{{ integration.status|title }}</span></div>{% endfor %}</section>
+
+  <aside>
+    <section class="panel side-card">
+      <p class="kicker">REQUIRED INFORMATION</p>
+      <div class="field-chips">
+        {% for field in organization.required_fields %}
+        <span>{{ field|title }} <b>required</b></span>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="panel side-card">
+      <div class="card-head">
+        <p class="kicker">CONNECTED TOOLS</p>
+        <span class="health">Healthy</span>
+      </div>
+
+      {% for integration in organization.integrations %}
+      <div class="integration">
+        <span class="integration-icon">
+          {% if 'Google' in integration.type or integration.type == 'Drive' %}G{% else %}↗{% endif %}
+        </span>
+        <div>
+          <strong>{{ integration.name }}</strong>
+          <small>{{ integration.type }}</small>
+        </div>
+        <span class="status {{ integration.status }}">
+          <i></i>{{ integration.status|title }}
+        </span>
+      </div>
+      {% endfor %}
+    </section>
   </aside>
 </div>
 {% endblock %}

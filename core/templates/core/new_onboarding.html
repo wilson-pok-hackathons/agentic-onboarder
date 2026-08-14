@@ -1,17 +1,87 @@
 {% extends 'core/base.html' %}
+
 {% block title %}New onboarding{% endblock %}
+
 {% block content %}
 <a class="back" href="{% url 'dashboard' %}">← Back to overview</a>
-<section class="page-heading"><p class="kicker">NEW ONBOARDING</p><h1>Give the agent what you have.</h1><p>Structured fields or rough notes both work. The agent will validate everything before taking action.</p></section>
+
+<section class="page-heading">
+  <p class="kicker">NEW ONBOARDING</p>
+  <h1>Give the agent what you have.</h1>
+  <p>Structured fields or rough notes both work. The agent will validate everything before taking action.</p>
+</section>
+
 <div class="form-layout">
-  <form class="panel form-card" method="post">{% csrf_token %}
-    <div class="field"><label for="organization">Organization</label><select name="organization" id="organization" onchange="location='?organization='+this.value">{% for org in organizations %}<option value="{{ org.slug }}" {% if org == organization %}selected{% endif %}>{{ org.name }} · {{ org.entity_type }}</option>{% endfor %}</select></div>
+  <form class="panel form-card" method="post">
+    {% csrf_token %}
+
+    <div class="field">
+      <label for="organization">Organization</label>
+      <select name="organization" id="organization" onchange="location='?organization='+this.value">
+        {% for org in organizations %}
+        <option value="{{ org.slug }}" {% if org == organization %}selected{% endif %}>
+          {{ org.name }} · {{ org.entity_type }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
     <div class="divider"></div>
-    <div class="field"><label for="name">{{ organization.entity_type }} name <em>Required</em></label><input id="name" name="name" placeholder="Enter a full name" required></div>
-    <div class="two-col">{% for field in organization.required_fields %}{% if field != 'name' %}<div class="field"><label for="{{ field }}">{{ field|title }}</label><input id="{{ field }}" name="{{ field }}" placeholder="Enter {{ field }}"></div>{% endif %}{% endfor %}</div>
-    <div class="field"><label for="source_text">Notes or onboarding package</label><textarea id="source_text" name="source_text" rows="5" placeholder="Paste an email, intake notes, or any unstructured information here…"></textarea><small>The Gemini extraction adapter will interpret this when connected.</small></div>
-    <div class="form-actions"><span><b>Tip:</b> Leave email blank to demo pause and resume.</span><button class="button primary" type="submit">Create & start run <span>→</span></button></div>
+
+    <div class="field">
+      <label for="name">{{ organization.entity_type }} name <em>Required</em></label>
+      <input id="name" name="name" placeholder="Enter a full name" required>
+    </div>
+
+    <div class="two-col">
+      {% for field in organization.required_fields %}
+      {% if field != 'name' %}
+      <div class="field">
+        <label for="{{ field }}">{{ field|title }}</label>
+        <input id="{{ field }}" name="{{ field }}" placeholder="Enter {{ field }}">
+      </div>
+      {% endif %}
+      {% endfor %}
+    </div>
+
+    <div class="field">
+      <label for="source_text">Notes or onboarding package</label>
+      <textarea id="source_text" name="source_text" rows="5" placeholder="Paste an email, intake notes, or any unstructured information here…"></textarea>
+      <small>The Gemini extraction adapter will interpret this when connected.</small>
+    </div>
+
+    <div class="form-actions">
+      <span><b>Tip:</b> Leave email blank to demo pause and resume.</span>
+      <button class="button primary" type="submit">
+        Create & start run <span>→</span>
+      </button>
+    </div>
   </form>
-  <aside class="panel plan-preview"><p class="kicker">PROPOSED PLAN</p><h3>{{ organization.name }}</h3><p>The active configuration will run these actions.</p><ol>{% for step in organization.workflow %}<li><span>{{ forloop.counter }}</span><div><strong>{{ step.title }}</strong><small>{{ step.tool }}</small></div></li>{% endfor %}</ol><div class="safe-note">⌾ <span><strong>Safe to retry</strong>Every action receives an idempotency key.</span></div></aside>
+
+  <aside class="panel plan-preview">
+    <p class="kicker">PROPOSED PLAN</p>
+    <h3>{{ organization.name }}</h3>
+    <p>The active configuration will run these actions.</p>
+
+    <ol>
+      {% for step in organization.workflow %}
+      <li>
+        <span>{{ forloop.counter }}</span>
+        <div>
+          <strong>{{ step.title }}</strong>
+          <small>{{ step.tool }}</small>
+        </div>
+      </li>
+      {% endfor %}
+    </ol>
+
+    <div class="safe-note">
+      ⌾
+      <span>
+        <strong>Safe to retry</strong>
+        Every action receives an idempotency key.
+      </span>
+    </div>
+  </aside>
 </div>
 {% endblock %}

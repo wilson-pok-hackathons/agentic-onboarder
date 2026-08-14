@@ -1,27 +1,132 @@
 <section class="run-header" data-run-status="{{ run.status }}">
-  <div><div class="run-title-row"><span class="entity-avatar large">{{ run.entity_name|slice:':1' }}</span><div><p class="kicker">{{ run.organization.entity_type|upper }} ONBOARDING</p><h1>{{ run.entity_name }}</h1><p>{{ run.organization.name }} · Started {{ run.created_at|timesince }} ago</p></div></div></div>
-  <span class="status large {{ run.status }}"><i></i>{{ run.get_status_display }}</span>
+  <div>
+    <div class="run-title-row">
+      <span class="entity-avatar large">{{ run.entity_name|slice:':1' }}</span>
+      <div>
+        <p class="kicker">{{ run.organization.entity_type|upper }} ONBOARDING</p>
+        <h1>{{ run.entity_name }}</h1>
+        <p>{{ run.organization.name }} · Started {{ run.created_at|timesince }} ago</p>
+      </div>
+    </div>
+  </div>
+  <span class="status large {{ run.status }}">
+    <i></i>{{ run.get_status_display }}
+  </span>
 </section>
-<div class="progress-card panel"><div><strong>{{ run.progress }}% complete</strong><span>{{ run.steps.all|length }} planned actions</span></div><div class="progress-track"><span style="width:{{ run.progress }}%"></span></div></div>
+
+<div class="progress-card panel">
+  <div>
+    <strong>{{ run.progress }}% complete</strong>
+    <span>{{ run.steps.all|length }} planned actions</span>
+  </div>
+  <div class="progress-track">
+    <span style="width:{{ run.progress }}%"></span>
+  </div>
+</div>
 
 {% if run.status == 'waiting_for_input' %}
 <section class="attention-card">
-  <div class="attention-icon">!</div><div class="attention-copy"><p class="kicker">AGENT NEEDS YOUR HELP</p><h2>Missing information is blocking the next action.</h2><p>Completed work is saved. Add the requested information and the agent will resume exactly where it paused.</p>
-  <form method="post" action="{% url 'run_resume' run.id %}" class="resume-form">{% csrf_token %}{% for field in run.missing_fields %}<div class="field"><label>{{ field|title }}</label><input name="{{ field }}" placeholder="Enter {{ field }}" required></div>{% endfor %}<button class="button dark" type="submit">Save & resume agent →</button></form></div>
+  <div class="attention-icon">!</div>
+  <div class="attention-copy">
+    <p class="kicker">AGENT NEEDS YOUR HELP</p>
+    <h2>Missing information is blocking the next action.</h2>
+    <p>Completed work is saved. Add the requested information and the agent will resume exactly where it paused.</p>
+
+    <form method="post" action="{% url 'run_resume' run.id %}" class="resume-form">
+      {% csrf_token %}
+      {% for field in run.missing_fields %}
+      <div class="field">
+        <label>{{ field|title }}</label>
+        <input name="{{ field }}" placeholder="Enter {{ field }}" required>
+      </div>
+      {% endfor %}
+      <button class="button dark" type="submit">Save & resume agent →</button>
+    </form>
+  </div>
 </section>
+
 {% elif run.status == 'completed' %}
-<section class="complete-banner"><div>✓</div><span><strong>Onboarding verified and complete</strong>All {{ run.steps.all|length }} operations returned successful results.</span></section>
+<section class="complete-banner">
+  <div>✓</div>
+  <span>
+    <strong>Onboarding verified and complete</strong>
+    All {{ run.steps.all|length }} operations returned successful results.
+  </span>
+</section>
 {% endif %}
 
 <div class="run-grid">
-  <section class="panel execution-card"><div class="card-head"><div><p class="kicker">EXECUTION PLAN</p><h2>Agent actions</h2></div><span class="live-indicator {% if run.status != 'running' %}paused{% endif %}"><i></i>{% if run.status == 'running' %}Live{% else %}{{ run.get_status_display }}{% endif %}</span></div>
-    <div class="timeline">{% for step in run.steps.all %}<article class="timeline-step {{ step.status }}">
-      <div class="timeline-marker">{% if step.status == 'completed' %}✓{% elif step.status == 'blocked' %}!{% elif step.status == 'running' %}•{% else %}{{ forloop.counter }}{% endif %}</div>
-      <div class="step-body"><div class="step-heading"><div><h3>{{ step.title }}</h3><p><code>{{ step.capability }}</code> · {{ step.tool_name }}</p></div><span class="status {{ step.status }}"><i></i>{{ step.get_status_display }}</span></div>
-        {% if step.summary %}<div class="step-result"><p>{{ step.summary }}</p>{% if step.result %}<small>Verified · Idempotency key stored · Attempt {{ step.attempt_count }}</small>{% endif %}</div>{% endif %}
-      </div></article>{% endfor %}</div>
+  <section class="panel execution-card">
+    <div class="card-head">
+      <div>
+        <p class="kicker">EXECUTION PLAN</p>
+        <h2>Agent actions</h2>
+      </div>
+      <span class="live-indicator {% if run.status != 'running' %}paused{% endif %}">
+        <i></i>
+        {% if run.status == 'running' %}Live{% else %}{{ run.get_status_display }}{% endif %}
+      </span>
+    </div>
+
+    <div class="timeline">
+      {% for step in run.steps.all %}
+      <article class="timeline-step {{ step.status }}">
+        <div class="timeline-marker">
+          {% if step.status == 'completed' %}✓
+          {% elif step.status == 'blocked' %}!
+          {% elif step.status == 'running' %}•
+          {% else %}{{ forloop.counter }}{% endif %}
+        </div>
+
+        <div class="step-body">
+          <div class="step-heading">
+            <div>
+              <h3>{{ step.title }}</h3>
+              <p><code>{{ step.capability }}</code> · {{ step.tool_name }}</p>
+            </div>
+            <span class="status {{ step.status }}">
+              <i></i>{{ step.get_status_display }}
+            </span>
+          </div>
+
+          {% if step.summary %}
+          <div class="step-result">
+            <p>{{ step.summary }}</p>
+            {% if step.result %}
+            <small>Verified · Idempotency key stored · Attempt {{ step.attempt_count }}</small>
+            {% endif %}
+          </div>
+          {% endif %}
+        </div>
+      </article>
+      {% endfor %}
+    </div>
   </section>
-  <aside><section class="panel side-card"><p class="kicker">ENTITY DATA</p>{% for key,value in run.entity_data.items %}<div class="data-row"><span>{{ key|title }}</span><strong>{% if value %}{{ value }}{% else %}<em>Not provided</em>{% endif %}</strong></div>{% endfor %}</section>
-    <section class="panel side-card activity"><p class="kicker">ACTIVITY</p>{% for event in run.events.all|slice:':6' %}<div class="event"><span class="event-dot {{ event.kind }}"></span><div><p>{{ event.message }}</p><small>{{ event.created_at|timesince }} ago</small></div></div>{% endfor %}</section>
+
+  <aside>
+    <section class="panel side-card">
+      <p class="kicker">ENTITY DATA</p>
+      {% for key, value in run.entity_data.items %}
+      <div class="data-row">
+        <span>{{ key|title }}</span>
+        <strong>
+          {% if value %}{{ value }}{% else %}<em>Not provided</em>{% endif %}
+        </strong>
+      </div>
+      {% endfor %}
+    </section>
+
+    <section class="panel side-card activity">
+      <p class="kicker">ACTIVITY</p>
+      {% for event in run.events.all|slice:':6' %}
+      <div class="event">
+        <span class="event-dot {{ event.kind }}"></span>
+        <div>
+          <p>{{ event.message }}</p>
+          <small>{{ event.created_at|timesince }} ago</small>
+        </div>
+      </div>
+      {% endfor %}
+    </section>
   </aside>
 </div>
