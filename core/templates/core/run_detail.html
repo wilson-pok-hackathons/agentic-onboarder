@@ -1,0 +1,30 @@
+{% extends 'core/base.html' %}
+{% block title %}{{ run.entity_name }}{% endblock %}
+{% block content %}
+<a class="back" href="{% url 'dashboard' %}">← All onboardings</a>
+<div id="run-state">{% include 'core/partials/run_state.html' %}</div>
+{% endblock %}
+{% block scripts %}
+<script>
+const stateEl = document.getElementById('run-state');
+const stateUrl = "{% url 'run_state' run.id %}";
+const advanceUrl = "{% url 'run_advance' run.id %}";
+const csrf = '{{ csrf_token }}';
+let busy = false;
+async function refreshState() {
+  const response = await fetch(stateUrl, {headers: {'X-Requested-With': 'fetch'}});
+  stateEl.innerHTML = await response.text();
+}
+async function tick() {
+  const status = stateEl.querySelector('[data-run-status]')?.dataset.runStatus;
+  if (busy || status !== 'running') return;
+  busy = true;
+  try {
+    await fetch(advanceUrl, {method: 'POST', headers: {'X-CSRFToken': csrf, 'X-Requested-With': 'fetch'}});
+    await refreshState();
+  } finally { busy = false; }
+}
+setTimeout(tick, 800);
+setInterval(tick, 1900);
+</script>
+{% endblock %}

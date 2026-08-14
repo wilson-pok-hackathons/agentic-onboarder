@@ -1,11 +1,9 @@
 from django.contrib import admin
 
-# Register your models here.
-from .models import Person
+from .models import OnboardingRun, Organization, RunEvent, WorkflowStep
 
 
-@admin.register(Person)
-class PersonAdmin(admin.ModelAdmin):
-    list_display = ("id", "first_name", "last_name", "age")
-    list_filter = ("age",)
-    search_fields = ("first_name", "last_name")
+admin.site.register(Organization)
+admin.site.register(OnboardingRun)
+admin.site.register(WorkflowStep)
+admin.site.register(RunEvent)
