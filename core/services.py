@@ -4,6 +4,9 @@ from django.utils import timezone
 from .models import OnboardingRun, RunEvent, WorkflowStep
 
 
+# These dictionaries are configuration, not separate hardcoded agent programs.
+# Both organizations are executed by the same create/advance/resume functions;
+# only their fields, integrations, and workflow recipes differ.
 DEMO_ORGANIZATIONS = [
     {
         "slug": "northstar-models",
@@ -55,14 +58,19 @@ DEMO_ORGANIZATIONS = [
 
 
 def ensure_demo_data():
+    """Upsert the built-in organizations so the MVP always has demo data."""
     from .models import Organization
 
     for config in DEMO_ORGANIZATIONS:
+        # Unlike `create`, this can run repeatedly without creating duplicates.
         Organization.objects.update_or_create(slug=config["slug"], defaults=config)
 
 
 def create_run(organization, data, source_text=""):
+    """Create a run and snapshot its organization's workflow into step rows."""
     entity_name = data.get("name") or f"New {organization.entity_type}"
+    # Every enclosed database write succeeds or rolls back as one unit. We never
+    # want a run saved with only half of its configured steps.
     with transaction.atomic():
         run = OnboardingRun.objects.create(
             organization=organization,
@@ -71,6 +79,8 @@ def create_run(organization, data, source_text=""):
             source_text=source_text,
             status=OnboardingRun.Status.RUNNING,
         )
+        # Convert the reusable JSON recipe into independently updateable rows
+        # for this particular execution.
         for index, item in enumerate(organization.workflow):
             WorkflowStep.objects.create(
                 run=run,
@@ -86,16 +96,22 @@ def create_run(organization, data, source_text=""):
 
 
 def advance_run(run):
+    """Move a run forward by no more than one workflow step."""
+    # Paused/completed runs must not execute. Failed is allowed so a future
+    # retry button can reuse this function.
     if run.status not in {OnboardingRun.Status.RUNNING, OnboardingRun.Status.FAILED}:
         return run
 
+    # WorkflowStep.Meta ordering makes this the earliest unfinished action.
     step = run.steps.exclude(status=WorkflowStep.Status.COMPLETED).first()
     if not step:
+        # Defensive repair for a running run that has no remaining work.
         run.status = OnboardingRun.Status.COMPLETED
         run.completed_at = timezone.now()
         run.save(update_fields=["status", "completed_at", "updated_at"])
         return run
 
+    # A step is eligible only when all configured required fields have values.
     missing = [field for field in step.requires if not run.entity_data.get(field)]
     if missing:
         step.status = WorkflowStep.Status.BLOCKED
@@ -107,15 +123,19 @@ def advance_run(run):
         RunEvent.objects.create(run=run, kind="attention", message=f"Paused safely. {', '.join(missing).title()} is required before {step.title.lower()}.")
         return run
 
+    # MVP simulation: this block stands in for a real external adapter call.
     step.status = WorkflowStep.Status.COMPLETED
     step.attempt_count += 1
     step.started_at = step.started_at or timezone.now()
     step.completed_at = timezone.now()
     step.summary = _summary_for(step)
+    # A stable run+step key lets real APIs recognize retries and avoid creating
+    # duplicate folders, calendars, profiles, or notifications.
     step.result = {"adapter": step.tool_name, "idempotency_key": f"{run.id}:{step.key}", "verified": True}
     step.save()
     RunEvent.objects.create(run=run, kind="success", message=step.summary, metadata={"step": step.key})
 
+    # `exists()` asks a cheap yes/no database question without loading all rows.
     if not run.steps.exclude(status=WorkflowStep.Status.COMPLETED).exists():
         run.status = OnboardingRun.Status.COMPLETED
         run.completed_at = timezone.now()
@@ -125,11 +145,15 @@ def advance_run(run):
 
 
 def resume_run(run, supplied):
+    """Merge human input into a paused run and make blocked work runnable."""
+    # Copy before updating so the JSON mutation is explicit.
     entity_data = dict(run.entity_data)
     entity_data.update({key: value.strip() for key, value in supplied.items() if value.strip()})
     run.entity_data = entity_data
     run.missing_fields = []
     run.status = OnboardingRun.Status.RUNNING
+    # Only blocked work is reset. Completed steps stay completed, so resume does
+    # not repeat already-successful external actions.
     run.steps.filter(status=WorkflowStep.Status.BLOCKED).update(status=WorkflowStep.Status.PENDING, summary="")
     run.save(update_fields=["entity_data", "missing_fields", "status", "updated_at"])
     RunEvent.objects.create(run=run, kind="resume", message="Missing information received. Resuming from the paused step; completed work will not be repeated.")
@@ -137,6 +161,7 @@ def resume_run(run, supplied):
 
 
 def _summary_for(step):
+    """Return safe activity text instead of exposing raw agent reasoning."""
     summaries = {
         "extract_entity_information": "Package fields extracted and validated against the organization configuration.",
         "create_internal_record": "Internal record created and its identifier stored.",

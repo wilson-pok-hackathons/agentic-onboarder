@@ -6,12 +6,14 @@
 <a class="back" href="{% url 'dashboard' %}">← All onboardings</a>
 
 <div id="run-state">
+  {# This inner fragment is replaced after each polling request. #}
   {% include 'core/partials/run_state.html' %}
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
+// Django turns these template tags into concrete URLs before sending the page.
 const stateEl = document.getElementById('run-state');
 const stateUrl = "{% url 'run_state' run.id %}";
 const advanceUrl = "{% url 'run_advance' run.id %}";
@@ -19,22 +21,28 @@ const csrf = '{{ csrf_token }}';
 let busy = false;
 
 async function refreshState() {
+  // Fetch only the changing run fragment, not the full page and sidebar.
   const response = await fetch(stateUrl, {headers: {'X-Requested-With': 'fetch'}});
   stateEl.innerHTML = await response.text();
 }
 
 async function tick() {
+  // The partial exposes authoritative server status as a data attribute.
   const status = stateEl.querySelector('[data-run-status]')?.dataset.runStatus;
+  // Avoid overlapping requests and never advance a paused/completed run.
   if (busy || status !== 'running') return;
   busy = true;
   try {
+    // Advancing changes database state, so it uses POST and a CSRF token.
     await fetch(advanceUrl, {method: 'POST', headers: {'X-CSRFToken': csrf, 'X-Requested-With': 'fetch'}});
+    // Now render the database state produced by that one advancement.
     await refreshState();
   } finally {
     busy = false;
   }
 }
 
+// Start shortly after load, then advance one visible step per interval.
 setTimeout(tick, 800);
 setInterval(tick, 1900);
 </script>
