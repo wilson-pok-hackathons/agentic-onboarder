@@ -1,29 +1,71 @@
+from enum import unique
 import uuid
 
 from django.db import models
 
 
+class Field(models.Model):
+    '''The table which describes the fields an organization can choose to collect for 
+    its new onboardings 
+
+    key: unique identifier
+    label: text shown in UI
+    type: description of field
+    '''
+    key = models.SlugField(unique=True)
+    label = models.CharField(max_length=120)
+    type = models.CharField(max_length=40)
+
+    def __str__(self):
+        return self.label
+
+
 class Organization(models.Model):
-    """A tenant/customer and the reusable configuration for its agent.
+    '''The table which describes information collected about an organization
 
-    The workflow is stored as JSON because different organizations can have
-    different fields and actions without requiring a new Django model for each
-    industry (for example, models versus recording artists).
-    """
-
-    # `slug` is the URL-safe identifier used in routes such as
-    # /setup/northstar-models/. The human-readable name can change safely.
+    slug: url safe indentifier
+    name: syntactically correct name of org
+    entity_type: 
+    description: description of organization
+    fields: 
+    required_fields:
+    integrations:
+    workflow:
+    is_active:
+    '''
     slug = models.SlugField(unique=True)
     name = models.CharField(max_length=160)
     entity_type = models.CharField(max_length=80)
     description = models.TextField(blank=True)
-    required_fields = models.JSONField(default=list)
-    workflow = models.JSONField(default=list)
+    fields = models.ManyToManyField(Field, )
     integrations = models.JSONField(default=list)
+    workflow = models.JSONField(default=list)
     is_active = models.BooleanField(default=True)
 
     def __str__(self):
         return self.name
+
+
+class OrganizationField(models,Model):
+    '''The table that acts as a join between the Field and Organization tables. Keeps
+    the Field entries global and allows us to see what eeach organization requires
+
+    organization: the org unique identifier in Organization table
+    field: the field unique indentofier in Field table
+    required: true if org requires field, false otherwise
+    '''
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name="organization_fields")
+    field = models.ForeignKey(Field, on_delete=models.CASCADE)
+    required = models.BooleanField(default=False)
+
+    class Meta:
+        # keeps the database from storing duplicate rows for an org<->field combo
+        constraints = [models.UniqueConstraint(fields=["organization", "field"], name="unique_org_field")]
+
+
+#
+# mostly undderstood above here
+#
 
 
 class OnboardingRun(models.Model):

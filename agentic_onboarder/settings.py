@@ -28,13 +28,13 @@ if env_file.exists():
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = env("DJANGO_SECRET_KEY")
-DEBUG = env.bool("DEBUG", default=False)
-ALLOWED_HOSTS = env.list(
-    "DJANGO_ALLOWED_HOSTS",
-    default=["localhost", "127.0.0.1"],
-)
+SECRET_KEY = 'django-insecure-!8t2+#tm52utqqf20zjaz1ttoqmw(pi*7^)2#wgdkts0(ooa3a'
 
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = True
+
+# hosts for production
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "[::1]"]
 
 
 # Application definition
