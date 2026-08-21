@@ -7,14 +7,21 @@ services.py (or views.py) reads/write data through models.py -> database
 '''
 
 
-from enum import unique
+
 import uuid
 
+from django.conf import settings
 from django.db import models
+from django.db.models.fields import related
+
 
 
 # =========================== CONFIGURATION SYSTEM ============================
+# =============================================================================
+#
 # Defines what an organiation is and what custom profile fields it requires
+#
+# =============================================================================
 
 class Field(models.Model):
     '''The table which describes the fields an organization can choose to collect for 
@@ -35,6 +42,7 @@ class Field(models.Model):
 class Organization(models.Model):
     '''The table which describes information collected about an organization
 
+    owner: the User this organiation is associated with
     slug: url safe indentifier
     name: syntactically correct name of org
     entity_type: the type of organization (modeling agency, record label, etc...)
@@ -44,6 +52,11 @@ class Organization(models.Model):
     workflow:
     is_active:
     '''
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="organizations"
+    )
     slug = models.SlugField(unique=True)
     name = models.CharField(max_length=160)
     entity_type = models.CharField(max_length=80)
@@ -53,13 +66,12 @@ class Organization(models.Model):
     workflow = models.JSONField(default=list)
     is_active = models.BooleanField(default=True)
 
-    @property
+    @property   # allows us to call this func like a field
     def required_fields(self):
         '''Dynamically queries OrganizationField bridge table to return list
         of slug strings for Fields the organization requires
         '''
         return list(
-            # organization_fields is a way for this table to refernce OrganiationField table
             # values_list uses the __ syntax to go to the Field table and grab a list of its keys
             OrganizationField
             .objects
@@ -90,7 +102,11 @@ class OrganizationField(models.Model):
 
 
 # =========================== EXECUTION SYSTEM ============================
+# =========================================================================
+#
 # Tracks the live, step by step background agent automations
+#
+# ==========================================================================
 
 class OnboardingRun(models.Model):
     """One concrete attempt to onboard one person/entity.

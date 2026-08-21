@@ -689,6 +689,14 @@ tr:last-child td {
   margin-bottom: 18px;
 }
 
+.field p {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-bottom: 14px;
+  width: 100%;
+}
+
 .field label {
   font-weight: 600;
   color: #35413d;
@@ -1305,6 +1313,32 @@ tr:last-child td {
   margin-bottom: 18px;
   background: #fff1db;
   color: #885a1b;
+}
+
+/* ── Auth shell (login / signup — no sidebar) ─────────────────── */
+ 
+.auth-body {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+}
+ 
+.auth-shell {
+  width: 100%;
+  max-width: 420px;
+}
+ 
+.auth-brand {
+  justify-content: center;
+  padding: 0 0 28px;
+  color: var(--ink);
+}
+ 
+.auth-brand .brand-mark {
+  background: #dff0e8;
+  color: var(--green);
 }
 
 /* ── Responsive ────────────────────────────────────────────────── */
