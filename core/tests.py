@@ -2,12 +2,11 @@ from django.test import TestCase
 from django.urls import reverse
 
 from .models import OnboardingRun, Organization, WorkflowStep
-from .services import advance_run, create_run, ensure_demo_data, resume_run
+from .services import advance_run, create_run, resume_run
 
 
 class ProductFlowTests(TestCase):
     def setUp(self):
-        ensure_demo_data()
         self.organization = Organization.objects.get(slug="northstar-models")
 
     def test_dashboard_and_setup_render(self):
