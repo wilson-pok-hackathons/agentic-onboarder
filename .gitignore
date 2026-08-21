@@ -325,7 +325,8 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
-### MacOS env loader ###
+### env loader ###
 .envrc
+pyrightconfig.json
 
 # End of https://www.toptal.com/developers/gitignore/api/macos,windows,django,python

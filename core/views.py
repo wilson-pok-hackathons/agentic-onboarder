@@ -1,3 +1,13 @@
+'''
+HTTP / Rendering Layer
+
+Handles requests and returns responses. Extracts incoming data, calls the service layer
+and formats the output.
+
+urls.py -> views.py -> calls services.py -> return Response (HTML/JSON)
+'''
+
+
 from django.contrib import messages
 from django.http import HttpResponseBadRequest, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render

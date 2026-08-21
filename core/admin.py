@@ -1,3 +1,11 @@
+'''
+Admin portal config
+
+Register data models (models.py) with Django built in backend administration panel
+
+Reads models.py -> exposes tables at /admin route
+'''
+
 from django.contrib import admin
 
 from .models import OnboardingRun, Organization, RunEvent, WorkflowStep
