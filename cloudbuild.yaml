@@ -1,0 +1,72 @@
+steps:
+  # Run Django checks and tests.
+  - name: python:3.12-slim
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        pip install --no-cache-dir -r requirements.txt
+        DJANGO_SECRET_KEY=cloud-build-test-key \
+        DATABASE_URL=sqlite:////workspace/build-test.sqlite3 \
+        DEBUG=False \
+        python manage.py check
+
+        DJANGO_SECRET_KEY=cloud-build-test-key \
+        DATABASE_URL=sqlite:////workspace/build-test.sqlite3 \
+        DEBUG=False \
+        python manage.py test
+
+  # Build the container remotely.
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REPOSITORY}/${_SERVICE_NAME}:$COMMIT_SHA
+      - .
+
+  # Push it to Artifact Registry.
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REPOSITORY}/${_SERVICE_NAME}:$COMMIT_SHA
+
+  # Create/update the migration job and execute it.
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - jobs
+      - deploy
+      - ${_SERVICE_NAME}-migrate
+      - --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REPOSITORY}/${_SERVICE_NAME}:$COMMIT_SHA
+      - --region=${_REGION}
+      - --service-account=${_RUNTIME_SERVICE_ACCOUNT}
+      - --set-cloudsql-instances=${_CLOUD_SQL_CONNECTION}
+      - --set-secrets=DJANGO_SECRET_KEY=${_DJANGO_SECRET}:${_SECRET_VERSION},DATABASE_URL=${_DATABASE_SECRET}:${_SECRET_VERSION}
+      - --set-env-vars=DEBUG=False,DJANGO_ALLOWED_HOSTS=*,GOOGLE_CLOUD_PROJECT=$PROJECT_ID,GOOGLE_CLOUD_LOCATION=${_REGION},GOOGLE_GENAI_USE_VERTEXAI=True,WORKFLOW_STATE_BACKEND=django,AGENT_BACKEND=local
+      - --command=python
+      - --args=manage.py,migrate
+      - --execute-now
+      - --wait
+
+  # Deploy the web application.
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - ${_SERVICE_NAME}
+      - --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REPOSITORY}/${_SERVICE_NAME}:$COMMIT_SHA
+      - --region=${_REGION}
+      - --platform=managed
+      - --port=8080
+      - --service-account=${_RUNTIME_SERVICE_ACCOUNT}
+      - --set-cloudsql-instances=${_CLOUD_SQL_CONNECTION}
+      - --set-secrets=DJANGO_SECRET_KEY=${_DJANGO_SECRET}:${_SECRET_VERSION},DATABASE_URL=${_DATABASE_SECRET}:${_SECRET_VERSION}
+      - --set-env-vars=DEBUG=False,DJANGO_ALLOWED_HOSTS=*,GOOGLE_CLOUD_PROJECT=$PROJECT_ID,GOOGLE_CLOUD_LOCATION=${_REGION},GOOGLE_GENAI_USE_VERTEXAI=True,WORKFLOW_STATE_BACKEND=django,AGENT_BACKEND=local
+
+images:
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REPOSITORY}/${_SERVICE_NAME}:$COMMIT_SHA
+
+options:
+  logging: CLOUD_LOGGING_ONLY
