@@ -1,0 +1,34 @@
+{% extends "core/auth_base.html" %}
+
+{% block title %}Sign up{% endblock %}
+
+{% block content %}
+<div class="page-heading" style="max-width: 420px; margin: 0 auto 20px; text-align: center;">
+    <p class="kicker">ONBOARDING GATE</p>
+    <h1>Create Your Account</h1>
+    <p>Establish a multi-tenant master key to control your automations.</p>
+</div>
+
+<div class="panel form-card">
+    <form method="POST">
+        {% csrf_token %}
+
+        <div class="field">
+            {{ form.as_p }}
+        </div>
+
+        <div class="divider" style="margin-top: 25px;"></div>
+
+        <button type="submit" class="button primary" style="width: 100%; justify-content: center; height: 44px;">
+            Register Master Account
+        </button>
+    </form>
+
+    <div class="form-actions" style="margin-top: 20px; justify-content: center; border-top: 0; padding-top: 0;">
+        <span>Already have an account?
+            <a href="{% url 'login' %}" style="color: var(--green); font-weight: 600; text-decoration: none;">Log in here</a>.
+        </span>
+    </div>
+</div>
+{% endblock %}
+

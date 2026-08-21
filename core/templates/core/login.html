@@ -1,0 +1,40 @@
+{% extends "core/auth_base.html" %}
+
+{% block title %}Log in{% endblock %}
+
+{% block content %}
+<div class="page-heading" style="max-width: 420px; margin: 0 auto 20px; text-align: center;">
+    <p class="kicker">SECURE GATEWAY</p>
+    <h1>Log In to Your Portal</h1>
+    <p>Welcome back! Access your organizations and agent monitors.</p>
+</div>
+
+<div class="panel form-card">
+    {% if form.errors %}
+        <div class="status failed large" style="display: block; margin-bottom: 20px; text-align: center;">
+            <i></i> Your username and password didn't match. Please try again.
+        </div>
+    {% endif %}
+
+    <form method="POST" action="{% url 'login' %}">
+        {% csrf_token %}
+
+        <div class="field">
+            {{ form.as_p }}
+        </div>
+
+        <div class="divider" style="margin-top: 25px;"></div>
+
+        <button type="submit" class="button primary" style="width: 100%; justify-content: center; height: 44px;">
+            Sign In to Account
+        </button>
+    </form>
+
+    <div class="form-actions" style="margin-top: 20px; justify-content: center; border-top: 0; padding-top: 0;">
+        <span>Don't have a developer account yet?
+            <a href="{% url 'signup' %}" style="color: var(--green); font-weight: 600; text-decoration: none;">Sign up here</a>.
+        </span>
+    </div>
+</div>
+{% endblock %}
+

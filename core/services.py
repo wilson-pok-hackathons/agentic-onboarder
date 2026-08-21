@@ -1,69 +1,54 @@
+'''
+Business logic layer
+
+Contains python functions that execute the actual logic of of the application. Complex workflows,
+external API calls, and heavy calc
+
+views.py -> calls services.py -> manipulates models.py -> returns raw data to view
+'''
+
+
+
 from django.db import transaction
 from django.utils import timezone
 
-from .models import OnboardingRun, RunEvent, WorkflowStep
+from .models import Field, Organization, OrganizationField, OnboardingRun, RunEvent, WorkflowStep
 
 
-# These dictionaries are configuration, not separate hardcoded agent programs.
-# Both organizations are executed by the same create/advance/resume functions;
-# only their fields, integrations, and workflow recipes differ.
-DEMO_ORGANIZATIONS = [
-    {
-        "slug": "northstar-models",
-        "name": "Northstar Models",
-        "entity_type": "Model",
-        "description": "Onboards new talent across the agency roster, portfolio, calendar, and communications.",
-        "required_fields": ["name", "email", "location", "availability"],
-        "integrations": [
-            {"name": "Agency database", "type": "Demo database", "status": "connected"},
-            {"name": "Google Drive", "type": "Drive", "status": "connected"},
-            {"name": "Booking calendar", "type": "Google Calendar", "status": "connected"},
-            {"name": "Portfolio CMS", "type": "Demo CMS", "status": "simulated"},
-            {"name": "Agency inbox", "type": "Gmail", "status": "connected"},
-        ],
-        "workflow": [
-            {"key": "extract", "title": "Extract & validate information", "capability": "extract_entity_information", "tool": "Gemini extractor", "requires": ["name", "location"]},
-            {"key": "record", "title": "Create agency record", "capability": "create_internal_record", "tool": "Demo database", "requires": ["name"]},
-            {"key": "drive", "title": "Create Drive folder", "capability": "create_folder", "tool": "Google Drive", "requires": ["name"]},
-            {"key": "calendar", "title": "Create booking calendar", "capability": "create_calendar", "tool": "Google Calendar", "requires": ["email", "availability"]},
-            {"key": "profile", "title": "Publish portfolio profile", "capability": "create_public_profile", "tool": "Demo CMS", "requires": ["name", "location"]},
-            {"key": "notify", "title": "Notify agency team", "capability": "send_notification", "tool": "Gmail", "requires": ["email"]},
-            {"key": "verify", "title": "Verify onboarding", "capability": "verify_operation", "tool": "ADK verifier", "requires": []},
-        ],
-    },
-    {
-        "slug": "aurora-records",
-        "name": "Aurora Records",
-        "entity_type": "Artist",
-        "description": "Coordinates newly signed artists across the roster, release workspace, calendar, and A&R team.",
-        "required_fields": ["name", "email", "genre", "manager"],
-        "integrations": [
-            {"name": "Artist roster", "type": "Demo database", "status": "connected"},
-            {"name": "Artist workspace", "type": "Google Drive", "status": "connected"},
-            {"name": "Release calendar", "type": "Google Calendar", "status": "connected"},
-            {"name": "Roster website", "type": "Demo CMS", "status": "simulated"},
-            {"name": "A&R alerts", "type": "Gmail", "status": "connected"},
-        ],
-        "workflow": [
-            {"key": "extract", "title": "Extract & validate information", "capability": "extract_entity_information", "tool": "Gemini extractor", "requires": ["name", "genre"]},
-            {"key": "record", "title": "Create artist record", "capability": "create_internal_record", "tool": "Demo database", "requires": ["name"]},
-            {"key": "drive", "title": "Create artist workspace", "capability": "create_folder", "tool": "Google Drive", "requires": ["name"]},
-            {"key": "profile", "title": "Publish roster profile", "capability": "create_public_profile", "tool": "Demo CMS", "requires": ["name", "genre"]},
-            {"key": "calendar", "title": "Create release calendar", "capability": "create_calendar", "tool": "Google Calendar", "requires": ["email"]},
-            {"key": "notify", "title": "Notify A&R team", "capability": "send_notification", "tool": "Gmail", "requires": ["email", "manager"]},
-            {"key": "verify", "title": "Verify onboarding", "capability": "verify_operation", "tool": "ADK verifier", "requires": []},
-        ],
-    },
-]
 
+################################################
+### Probably aactual useful stuff down here ###
 
-def ensure_demo_data():
-    """Upsert the built-in organizations so the MVP always has demo data."""
-    from .models import Organization
+def save_organization_config(organization, selected_field_keys, required_field_keys):
+    """Synchronizes an organiations selected and required fields by setting up new rows in
+    the OrganizationField table
+    """
+    with transaction.atomic():
+        # clear out any existing required fields for this org
+        OrganizationField.objects.filter(organization=organization).delete()
 
-    for config in DEMO_ORGANIZATIONS:
-        # Unlike `create`, this can run repeatedly without creating duplicates.
-        Organization.objects.update_or_create(slug=config["slug"], defaults=config)
+        # get the actual Field objects from the Field table based on user choices
+        active_fields = Field.objects.filter(key__in=selected_field_keys)
+
+        # create new OrganizationField rows
+        new_brdige_rows = []
+        for field in active_fields:
+        # check for required flag
+            is_required = field.key in required_field_keys
+
+            new_brdige_rows.append(
+                OrganizationField(
+                    organization = organization,
+                    field = field,
+                    required = is_required
+                )
+            )
+
+        # insert new rows into table
+        OrganizationField.objects.bulk_create(new_brdige_rows)
+
+        # sync Django's ManyToMany fields
+        organization.fields.set(active_fields)
 
 
 def create_run(organization, data, source_text=""):
