@@ -1316,7 +1316,7 @@ tr:last-child td {
 }
 
 /* ── Auth shell (login / signup — no sidebar) ─────────────────── */
- 
+
 .auth-body {
   min-height: 100vh;
   display: flex;
@@ -1329,16 +1329,23 @@ tr:last-child td {
   width: 100%;
   max-width: 420px;
 }
- 
+
 .auth-brand {
   justify-content: center;
   padding: 0 0 28px;
   color: var(--ink);
+  font-size: 48px;
 }
- 
+
 .auth-brand .brand-mark {
-  background: #dff0e8;
-  color: var(--green);
+  background: var(--green);
+  color: #fff;
+}
+
+.auth-brand-mark {
+  width: 64px;
+  height: 64px;
+  font-size: 48px;
 }
 
 /* ── Responsive ────────────────────────────────────────────────── */
