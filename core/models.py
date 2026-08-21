@@ -46,7 +46,7 @@ class Organization(models.Model):
         return self.name
 
 
-class OrganizationField(models,Model):
+class OrganizationField(models.Model):
     '''The table that acts as a join between the Field and Organization tables. Keeps
     the Field entries global and allows us to see what eeach organization requires
 
