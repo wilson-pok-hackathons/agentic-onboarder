@@ -1,6 +1,16 @@
+'''
+Routing layer
+
+Maps web URLs to specific views. Entry way for request to the application
+
+User browser -> urls.py -> matches path -> dispatches to views.py
+'''
+
+
 from django.urls import path
 
 from . import views
+
 
 urlpatterns = [
     # Full-page routes shown directly in the browser.

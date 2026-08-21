@@ -1,12 +1,24 @@
+'''
+Data / storage layer
+
+Defines schemas of our database using Django ORM (object relational mapper)
+
+services.py (or views.py) reads/write data through models.py -> database
+'''
+
+
 from enum import unique
 import uuid
 
 from django.db import models
 
 
+# =========================== CONFIGURATION SYSTEM ============================
+# Defines what an organiation is and what custom profile fields it requires
+
 class Field(models.Model):
     '''The table which describes the fields an organization can choose to collect for 
-    its new onboardings 
+    its new onboardings
 
     key: unique identifier
     label: text shown in UI
@@ -25,10 +37,9 @@ class Organization(models.Model):
 
     slug: url safe indentifier
     name: syntactically correct name of org
-    entity_type: 
+    entity_type: the type of organization (modeling agency, record label, etc...)
     description: description of organization
-    fields: 
-    required_fields:
+    fields: the fields an org collects for its new onboardings
     integrations:
     workflow:
     is_active:
@@ -42,16 +53,30 @@ class Organization(models.Model):
     workflow = models.JSONField(default=list)
     is_active = models.BooleanField(default=True)
 
+    @property
+    def required_fields(self):
+        '''Dynamically queries OrganizationField bridge table to return list
+        of slug strings for Fields the organization requires
+        '''
+        return list(
+            # organization_fields is a way for this table to refernce OrganiationField table
+            # values_list uses the __ syntax to go to the Field table and grab a list of its keys
+            OrganizationField
+            .objects
+            .filter(organization=self, required=True)
+            .values_list("field__key", flat=True)
+        )
+
     def __str__(self):
         return self.name
 
 
-class OrganizationField(models,Model):
+class OrganizationField(models.Model):
     '''The table that acts as a join between the Field and Organization tables. Keeps
-    the Field entries global and allows us to see what eeach organization requires
+    the Field entries global and allows us to see what each organization strictly requires
 
     organization: the org unique identifier in Organization table
-    field: the field unique indentofier in Field table
+    field: the field unique indentifier in Field table
     required: true if org requires field, false otherwise
     '''
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name="organization_fields")
@@ -59,14 +84,13 @@ class OrganizationField(models,Model):
     required = models.BooleanField(default=False)
 
     class Meta:
-        # keeps the database from storing duplicate rows for an org<->field combo
+        '''Keeps the database from storing duplicate rows for an org<->field combo'''
         constraints = [models.UniqueConstraint(fields=["organization", "field"], name="unique_org_field")]
 
 
-#
-# mostly undderstood above here
-#
 
+# =========================== EXECUTION SYSTEM ============================
+# Tracks the live, step by step background agent automations
 
 class OnboardingRun(models.Model):
     """One concrete attempt to onboard one person/entity.
