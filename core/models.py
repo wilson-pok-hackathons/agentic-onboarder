@@ -16,12 +16,12 @@ from django.db.models.fields import related
 
 
 
-# =========================== CONFIGURATION SYSTEM ============================
-# =============================================================================
+# =========================== ORGANIZATION CONFIGURATION SYSTEM ============================
+# ==========================================================================================
 #
 # Defines what an organiation is and what custom profile fields it requires
 #
-# =============================================================================
+# ==========================================================================================
 
 class Field(models.Model):
     '''The table which describes the fields an organization can choose to collect for 
@@ -98,6 +98,14 @@ class OrganizationField(models.Model):
     class Meta:
         '''Keeps the database from storing duplicate rows for an org<->field combo'''
         constraints = [models.UniqueConstraint(fields=["organization", "field"], name="unique_org_field")]
+
+
+
+# ==================== ORGANIZATION ONBOARDING ENTRY =====================
+# ========================================================================
+#
+# 
+#
 
 
 
