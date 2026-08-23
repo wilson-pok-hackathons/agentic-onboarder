@@ -1,37 +1,60 @@
 steps:
-  # Run Django checks and tests.
-  - name: python:3.12-slim
+  # Pull the previous successful image for Docker layer caching.
+  # The first cached build may not have a latest image yet, so failure is allowed.
+  - name: gcr.io/cloud-builders/docker
+    id: pull-cache
     entrypoint: bash
     args:
       - -c
       - |
-        pip install --no-cache-dir -r requirements.txt
-        DJANGO_SECRET_KEY=cloud-build-test-key \
-        DATABASE_URL=sqlite:////workspace/build-test.sqlite3 \
-        DEBUG=False \
-        python manage.py check
+        docker pull \
+          ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REPOSITORY}/${_SERVICE_NAME}:latest \
+          || exit 0
 
-        DJANGO_SECRET_KEY=cloud-build-test-key \
-        DATABASE_URL=sqlite:////workspace/build-test.sqlite3 \
-        DEBUG=False \
-        python manage.py test
-
-  # Build the container remotely.
+  # Build once and reuse unchanged layers from the previous image.
   - name: gcr.io/cloud-builders/docker
+    id: build
     args:
       - build
+      - --cache-from
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REPOSITORY}/${_SERVICE_NAME}:latest
       - -t
       - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REPOSITORY}/${_SERVICE_NAME}:$COMMIT_SHA
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REPOSITORY}/${_SERVICE_NAME}:latest
       - .
 
-  # Push it to Artifact Registry.
+  # Run checks and tests inside the image instead of installing dependencies again.
   - name: gcr.io/cloud-builders/docker
+    id: test
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        docker run --rm \
+          -e DJANGO_SECRET_KEY=cloud-build-test-key \
+          -e DATABASE_URL=sqlite:////tmp/build-test.sqlite3 \
+          -e DEBUG=False \
+          ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REPOSITORY}/${_SERVICE_NAME}:$COMMIT_SHA \
+          sh -c "python manage.py check && python manage.py test"
+
+  # Push the immutable commit image used for deployment.
+  - name: gcr.io/cloud-builders/docker
+    id: push-commit
     args:
       - push
       - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REPOSITORY}/${_SERVICE_NAME}:$COMMIT_SHA
 
+  # Update the cache source only after checks and tests pass.
+  - name: gcr.io/cloud-builders/docker
+    id: push-cache
+    args:
+      - push
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REPOSITORY}/${_SERVICE_NAME}:latest
+
   # Create/update the migration job and execute it.
   - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    id: migrate
     entrypoint: gcloud
     args:
       - run
@@ -51,6 +74,7 @@ steps:
 
   # Deploy the web application.
   - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    id: deploy
     entrypoint: gcloud
     args:
       - run
@@ -64,9 +88,6 @@ steps:
       - --set-cloudsql-instances=${_CLOUD_SQL_CONNECTION}
       - --set-secrets=DJANGO_SECRET_KEY=${_DJANGO_SECRET}:${_SECRET_VERSION},DATABASE_URL=${_DATABASE_SECRET}:${_SECRET_VERSION}
       - --set-env-vars=DEBUG=False,DJANGO_ALLOWED_HOSTS=*,GOOGLE_CLOUD_PROJECT=$PROJECT_ID,GOOGLE_CLOUD_LOCATION=${_REGION},GOOGLE_GENAI_USE_VERTEXAI=True,WORKFLOW_STATE_BACKEND=django,AGENT_BACKEND=local
-
-images:
-  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REPOSITORY}/${_SERVICE_NAME}:$COMMIT_SHA
 
 options:
   logging: CLOUD_LOGGING_ONLY
