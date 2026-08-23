@@ -43,7 +43,25 @@
       <div>
         <span class="eyebrow">OPERATIONS CONSOLE</span>
       </div>
-      <div class="avatar">HA</div>
+ 
+      {% if user.is_authenticated %}
+      <div class="avatar-menu">
+        <button type="button" class="avatar-trigger" id="avatar-trigger" aria-haspopup="true" aria-expanded="false">
+          <div class="avatar">{{ user.first_name|first|default:user.username|first|upper }}{{ user.last_name|first|upper }}</div>
+        </button>
+ 
+        <div class="avatar-dropdown" id="avatar-dropdown">
+          <div class="avatar-dropdown-user">
+            <strong>{{ user.get_full_name|default:user.username }}</strong>
+            <small>{{ user.email }}</small>
+          </div>
+          <form method="POST" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit">Log out</button>
+          </form>
+        </div>
+      </div>
+      {% endif %}
     </header>
 
     <div class="content">
@@ -57,6 +75,36 @@
     </div>
   </main>
 
-  {% block scripts %}{% endblock %}
+  {% block scripts %}
+  <script>
+    (function () {
+      var trigger = document.getElementById('avatar-trigger');
+      var dropdown = document.getElementById('avatar-dropdown');
+      if (!trigger || !dropdown) return;
+ 
+      function closeDropdown() {
+        dropdown.classList.remove('open');
+        trigger.setAttribute('aria-expanded', 'false');
+      }
+ 
+      trigger.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var isOpen = dropdown.classList.toggle('open');
+        trigger.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      });
+ 
+      document.addEventListener('click', function (e) {
+        if (!dropdown.contains(e.target) && e.target !== trigger) {
+          closeDropdown();
+        }
+      });
+ 
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeDropdown();
+      });
+    })();
+  </script>
+  {% endblock %}
+
 </body>
 </html>

@@ -213,6 +213,82 @@ h3 {
   font-size: 12px;
 }
 
+/* ── Avatar menu (topbar dropdown) ───────────────────────────────── */
+ 
+.avatar-menu {
+  position: relative;
+}
+ 
+.avatar-trigger {
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  display: block;
+  border-radius: 50%;
+}
+ 
+.avatar-trigger:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
+ 
+.avatar-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  min-width: 180px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: 6px;
+  display: none;
+  z-index: 5;
+}
+ 
+.avatar-dropdown.open {
+  display: block;
+}
+ 
+.avatar-dropdown-user {
+  padding: 8px 10px 10px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 6px;
+}
+ 
+.avatar-dropdown-user strong {
+  display: block;
+  font-size: 13px;
+  color: var(--ink);
+}
+ 
+.avatar-dropdown-user small {
+  color: var(--muted);
+  font-size: 11px;
+}
+ 
+.avatar-dropdown form {
+  margin: 0;
+}
+ 
+.avatar-dropdown button {
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: none;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  font: 600 13px 'DM Sans', sans-serif;
+  color: #b5453a;
+  cursor: pointer;
+  transition: background var(--ease);
+}
+ 
+.avatar-dropdown button:hover {
+  background: #fbeeec;
+}
+
 /* ── Page header ───────────────────────────────────────────────── */
 
 .hero-row {
