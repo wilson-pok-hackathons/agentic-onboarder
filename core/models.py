@@ -61,7 +61,11 @@ class Organization(models.Model):
     name = models.CharField(max_length=160)
     entity_type = models.CharField(max_length=80)
     description = models.TextField(blank=True)
-    fields = models.ManyToManyField(Field, )
+    # fields = models.ManyToManyField(
+    #     "Field",
+    #     through="OrganizationField",
+    #     related_name="organizations",
+    # )
     integrations = models.JSONField(default=list)
     workflow = models.JSONField(default=list)
     is_active = models.BooleanField(default=True)
@@ -91,14 +95,26 @@ class OrganizationField(models.Model):
     field: the field unique indentifier in Field table
     required: true if org requires field, false otherwise
     '''
-    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name="organization_fields")
-    field = models.ForeignKey(Field, on_delete=models.CASCADE)
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.CASCADE,
+        related_name="organization_fields",
+    )
+    field = models.ForeignKey(
+        Field,
+        on_delete=models.CASCADE,
+        related_name="organization_fields",
+    )
     required = models.BooleanField(default=False)
 
     class Meta:
         '''Keeps the database from storing duplicate rows for an org<->field combo'''
-        constraints = [models.UniqueConstraint(fields=["organization", "field"], name="unique_org_field")]
-
+        constraints = [
+                    models.UniqueConstraint(
+                        fields=["organization", "field"],
+                        name="unique_org_field",
+                    )
+                ]
 
 
 # ==================== ORGANIZATION ONBOARDING ENTRY =====================
