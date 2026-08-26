@@ -13,19 +13,19 @@
 <body>
   <aside class="sidebar">
     <a class="brand" href="{% url 'dashboard' %}">
-      <span class="brand-mark">R</span>
-      <span>Relay</span>
+      <span class="brand-mark">RS</span>
+      <span>Relay Scholar</span>
     </a>
 
     <nav>
       <a class="nav-item {% if page == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}">
-        <span>⌂</span> Overview
+        <span>⌂</span> Dashboard
       </a>
       <a class="nav-item {% if page == 'runs' %}active{% endif %}" href="{% url 'dashboard' %}#runs">
         <span>◫</span> Onboardings
       </a>
       <a class="nav-item {% if page == 'setup' %}active{% endif %}" href="{% url 'setup' %}">
-        <span>◇</span> Organization
+        <span>◇</span> Organizations
       </a>
     </nav>
 
@@ -76,34 +76,34 @@
   </main>
 
   {% block scripts %}
-  <script>
-    (function () {
-      var trigger = document.getElementById('avatar-trigger');
-      var dropdown = document.getElementById('avatar-dropdown');
-      if (!trigger || !dropdown) return;
+    <script>
+      (function () {
+        var trigger = document.getElementById('avatar-trigger');
+        var dropdown = document.getElementById('avatar-dropdown');
+        if (!trigger || !dropdown) return;
  
-      function closeDropdown() {
-        dropdown.classList.remove('open');
-        trigger.setAttribute('aria-expanded', 'false');
-      }
- 
-      trigger.addEventListener('click', function (e) {
-        e.stopPropagation();
-        var isOpen = dropdown.classList.toggle('open');
-        trigger.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-      });
- 
-      document.addEventListener('click', function (e) {
-        if (!dropdown.contains(e.target) && e.target !== trigger) {
-          closeDropdown();
+        function closeDropdown() {
+          dropdown.classList.remove('open');
+          trigger.setAttribute('aria-expanded', 'false');
         }
-      });
  
-      document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') closeDropdown();
-      });
-    })();
-  </script>
+        trigger.addEventListener('click', function (e) {
+          e.stopPropagation();
+          var isOpen = dropdown.classList.toggle('open');
+          trigger.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        });
+ 
+        document.addEventListener('click', function (e) {
+          if (!dropdown.contains(e.target) && e.target !== trigger) {
+            closeDropdown();
+          }
+        });
+ 
+        document.addEventListener('keydown', function (e) {
+          if (e.key === 'Escape') closeDropdown();
+        });
+      })();
+    </script>
   {% endblock %}
 
 </body>

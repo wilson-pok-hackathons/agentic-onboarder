@@ -85,7 +85,6 @@ def dashboard(request):
         organization__owner=request.user
     ).order_by("-created_at")[:8]
 
-
     counts = {key: OnboardingRun.objects.filter(organization__owner=request.user, status=value).count()
         for key, value in {
             "active": OnboardingRun.Status.RUNNING,
