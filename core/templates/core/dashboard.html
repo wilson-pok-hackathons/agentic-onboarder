@@ -3,9 +3,9 @@
 {% block title %}Overview{% endblock %}
 
 {% block content %}
-<!-- header --!>
+<!-- header -->
   <section class="hero-row">
-    <!--  render todays date and greeting --!>
+    <!--  render todays date and greeting -->
     <div>
       <p class="kicker">
         {% filter upper %}
@@ -13,7 +13,7 @@
         {% endfilter %}
       </p>
       <h1 id="greeting"></h1>
-      <!-- choose greeting based on if currently logged in user is owner of any orgs --!>
+      <!-- choose greeting based on if currently logged in user is owner of any orgs -->
       <p>
         {% if organizations %}
           Here’s what your onboarding agent is handling.
@@ -23,7 +23,7 @@
       </p>
     </div>
 
-    <!-- if currently logged in user is owner of any orgs, show new onboarding button --!>
+    <!-- if currently logged in user is owner of any orgs, show new onboarding button -->
     {% if organizations %}
       <a class="button primary" href="{% url 'new_onboarding' %}">
         <span>＋</span> New onboarding
@@ -31,7 +31,7 @@
     {% endif %}
   </section>
 
-  <!-- if currrently logged in user has any orgs + onboardings data --!>
+  <!-- if currrently logged in user has any orgs + onboardings data -->
   {% if organizations %}
     <section class="metric-grid">
       <div class="metric">
