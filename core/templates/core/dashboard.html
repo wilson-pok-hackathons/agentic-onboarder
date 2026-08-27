@@ -3,141 +3,184 @@
 {% block title %}Overview{% endblock %}
 
 {% block content %}
-<section class="hero-row">
-  <div>
-    <p class="kicker">THURSDAY, AUGUST 13</p>
-    <h1>Good afternoon.</h1>
-    <p>Here’s what your onboarding agent is handling.</p>
-  </div>
-  <a class="button primary" href="{% url 'new_onboarding' %}">
-    <span>＋</span> New onboarding
-  </a>
-</section>
-
-<section class="metric-grid">
-  <div class="metric">
-    <div class="metric-icon lavender">↗</div>
+<!-- header --!>
+  <section class="hero-row">
+    <!--  render todays date and greeting --!>
     <div>
-      <span>Active runs</span>
-      <strong>{{ counts.active }}</strong>
-      <small>Agent working now</small>
+      <p class="kicker">
+        {% filter upper %}
+          {% now "l, F j" %}
+        {% endfilter %}
+      </p>
+      <h1 id="greeting"></h1>
+      <!-- choose greeting based on if currently logged in user is owner of any orgs --!>
+      <p>
+        {% if organizations %}
+          Here’s what your onboarding agent is handling.
+        {% else %}
+          Get started by adding your first organiztion.
+        {% endif %}
+      </p>
     </div>
-  </div>
 
-  <div class="metric">
-    <div class="metric-icon amber">!</div>
-    <div>
-      <span>Needs attention</span>
-      <strong>{{ counts.attention }}</strong>
-      <small>Waiting for a person</small>
+    <!-- if currently logged in user is owner of any orgs, show new onboarding button --!>
+    {% if organizations %}
+      <a class="button primary" href="{% url 'new_onboarding' %}">
+        <span>＋</span> New onboarding
+      </a>
+    {% endif %}
+  </section>
+
+  <!-- if currrently logged in user has any orgs + onboardings data --!>
+  {% if organizations %}
+    <section class="metric-grid">
+      <div class="metric">
+        <div class="metric-icon lavender">↗</div>
+        <div>
+          <span>Active runs</span>
+          <strong>{{ counts.active }}</strong>
+          <small>Agent working now</small>
+        </div>
+      </div>
+
+      <div class="metric">
+        <div class="metric-icon amber">!</div>
+        <div>
+          <span>Needs attention</span>
+          <strong>{{ counts.attention }}</strong>
+          <small>Waiting for a person</small>
+        </div>
+      </div>
+
+      <div class="metric">
+        <div class="metric-icon green">✓</div>
+        <div>
+          <span>Completed</span>
+          <strong>{{ counts.completed }}</strong>
+          <small>Verified onboardings</small>
+        </div>
+      </div>
+
+      <div class="metric">
+        <div class="metric-icon slate">×</div>
+        <div>
+          <span>Failed</span>
+          <strong>{{ counts.failed }}</strong>
+          <small>Requires investigation</small>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-head" id="runs">
+      <div>
+        <h2>Recent onboardings</h2>
+        <p>Every action your agent has taken, in one place.</p>
+      </div>
+      <a href="{% url 'new_onboarding' %}">Start a run →</a>
+    </section>
+
+    <!-- a section describing past runs -->
+    <div class="panel table-panel">
+      {% if runs %}
+        <table>
+          <thead>
+            <tr>
+              <th>Person / entity</th>
+              <th>Organization</th>
+              <th>Status</th>
+              <th>Progress</th>
+              <th>Updated</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for run in runs %}
+              <tr>
+                <td>
+                  <a class="entity" href="{% url 'run_detail' run.id %}">
+                    <span class="entity-avatar">{{ run.entity_name|slice:':1' }}</span>
+                    <span>
+                      <strong>{{ run.entity_name }}</strong>
+                      <small>{{ run.organization.entity_type }} onboarding</small>
+                    </span>
+                  </a>
+                </td>
+                <td>{{ run.organization.name }}</td>
+                <td>
+                  <span class="status {{ run.status }}">
+                    <i></i>{{ run.get_status_display }}
+                  </span>
+                </td>
+                <td>
+                  <div class="mini-progress">
+                    <span style="width:{{ run.progress }}%"></span>
+                  </div>
+                  <small>{{ run.progress }}%</small>
+                </td>
+                <td>{{ run.updated_at|timesince }} ago</td>
+                <td>
+                  <a class="arrow" href="{% url 'run_detail' run.id %}">→</a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="empty">
+          <div>✦</div>
+          <h3>Your agent is ready</h3>
+          <p>Start an onboarding to watch it plan, execute, pause, and verify each operation.</p>
+          <a class="button primary" href="{% url 'new_onboarding' %}">Start first onboarding</a>
+        </div>
+      {% endif %}
     </div>
-  </div>
 
-  <div class="metric">
-    <div class="metric-icon green">✓</div>
-    <div>
-      <span>Completed</span>
-      <strong>{{ counts.completed }}</strong>
-      <small>Verified onboardings</small>
-    </div>
-  </div>
+    <section class="section-head">
+      <div>
+        <h2>Organizations</h2>
+        <p>The same agent, configured for different operations.</p>
+      </div>
+    </section>
 
-  <div class="metric">
-    <div class="metric-icon slate">×</div>
-    <div>
-      <span>Failed</span>
-      <strong>{{ counts.failed }}</strong>
-      <small>Requires investigation</small>
-    </div>
-  </div>
-</section>
-
-<section class="section-head" id="runs">
-  <div>
-    <h2>Recent onboardings</h2>
-    <p>Every action your agent has taken, in one place.</p>
-  </div>
-  <a href="{% url 'new_onboarding' %}">Start a run →</a>
-</section>
-
-<!-- a section describing a past run -->
-<div class="panel table-panel">
-  {% if runs %}
-  <table>
-    <thead>
-      <tr>
-        <th>Person / entity</th>
-        <th>Organization</th>
-        <th>Status</th>
-        <th>Progress</th>
-        <th>Updated</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for run in runs %}
-      <tr>
-        <td>
-          <a class="entity" href="{% url 'run_detail' run.id %}">
-            <span class="entity-avatar">{{ run.entity_name|slice:':1' }}</span>
-            <span>
-              <strong>{{ run.entity_name }}</strong>
-              <small>{{ run.organization.entity_type }} onboarding</small>
-            </span>
-          </a>
-        </td>
-        <td>{{ run.organization.name }}</td>
-        <td>
-          <span class="status {{ run.status }}">
-            <i></i>{{ run.get_status_display }}
-          </span>
-        </td>
-        <td>
-          <div class="mini-progress">
-            <span style="width:{{ run.progress }}%"></span>
+    <div class="org-grid">
+      {% for org in organizations %}
+        <a class="panel org-card" href="{% url 'organization_setup' org.slug %}">
+          <div class="org-top">
+            <span class="org-logo {% cycle 'purple' 'orange' %}">{{ org.name|slice:':1' }}</span>
+            <span class="status connected"><i></i>Active</span>
           </div>
-          <small>{{ run.progress }}%</small>
-        </td>
-        <td>{{ run.updated_at|timesince }} ago</td>
-        <td>
-          <a class="arrow" href="{% url 'run_detail' run.id %}">→</a>
-        </td>
-      </tr>
+          <h3>{{ org.name }}</h3>
+          <p>{{ org.description }}</p>
+          <div class="chips">
+            <span>{{ org.entity_type }}</span>
+            <span>{{ org.workflow|length }} actions</span>
+            <span>{{ org.integrations|length }} tools</span>
+          </div>
+        </a>
       {% endfor %}
-    </tbody>
-  </table>
+    </div>
   {% else %}
-  <div class="empty">
-    <div>✦</div>
-    <h3>Your agent is ready</h3>
-    <p>Start an onboarding to watch it plan, execute, pause, and verify each operation.</p>
-    <a class="button primary" href="{% url 'new_onboarding' %}">Start first onboarding</a>
-  </div>
+    <a class="button primary" href="{% url 'add_organization' %}">
+        <span>＋</span> New organization
+    </a>
   {% endif %}
-</div>
-
-<section class="section-head">
-  <div>
-    <h2>Organizations</h2>
-    <p>The same agent, configured for different operations.</p>
-  </div>
-</section>
-
-<div class="org-grid">
-  {% for org in organizations %}
-  <a class="panel org-card" href="{% url 'organization_setup' org.slug %}">
-    <div class="org-top">
-      <span class="org-logo {% cycle 'purple' 'orange' %}">{{ org.name|slice:':1' }}</span>
-      <span class="status connected"><i></i>Active</span>
-    </div>
-    <h3>{{ org.name }}</h3>
-    <p>{{ org.description }}</p>
-    <div class="chips">
-      <span>{{ org.entity_type }}</span>
-      <span>{{ org.workflow|length }} actions</span>
-      <span>{{ org.integrations|length }} tools</span>
-    </div>
-  </a>
-  {% endfor %}
-</div>
 {% endblock %}
+
+{% block scripts %}
+    {{ block.super }}
+    <script>
+      const day_hour = new Date().getHours();
+      let greeting = ""
+
+      if (day_hour >= 0 && day_hour < 12) {
+        greeting = "Good morning"
+      } else if (day_hour >= 12 && day_hour < 18) {
+        greeting = "Good afternoon"
+      } else if (day_hour >= 18 && day_hour <= 23) {
+        greeting = "Good evening"
+      }
+
+      document.getElementById("greeting").innerText = greeting;
+    </script>
+  {% endblock %}
+
