@@ -18,14 +18,14 @@
         {% if organizations %}
           Here’s what your onboarding agent is handling.
         {% else %}
-          Get started by adding your first organiztion.
+          Get started by registering your email
         {% endif %}
       </p>
     </div>
 
     <!-- if currently logged in user is owner of any orgs, show new onboarding button -->
     {% if organizations %}
-      <a class="button primary" href="{% url 'new_onboarding' %}">
+      <a class="button primary" href="{% url 'dashboard' %}">
         <span>＋</span> New onboarding
       </a>
     {% endif %}
@@ -76,7 +76,7 @@
         <h2>Recent onboardings</h2>
         <p>Every action your agent has taken, in one place.</p>
       </div>
-      <a href="{% url 'new_onboarding' %}">Start a run →</a>
+      <a href="{% url 'dashboard' %}">Start a run →</a>
     </section>
 
     <!-- a section describing past runs -->
@@ -119,7 +119,7 @@
                 </td>
                 <td>{{ run.updated_at|timesince }} ago</td>
                 <td>
-                  <a class="arrow" href="{% url 'run_detail' run.id %}">→</a>
+                  <a class="arrow" href="{% url 'dashboard' %}">→</a>
                 </td>
               </tr>
             {% endfor %}
@@ -130,7 +130,7 @@
           <div>✦</div>
           <h3>Your agent is ready</h3>
           <p>Start an onboarding to watch it plan, execute, pause, and verify each operation.</p>
-          <a class="button primary" href="{% url 'new_onboarding' %}">Start first onboarding</a>
+          <a class="button primary" href="{% url 'dashboard' %}">Start first onboarding</a>
         </div>
       {% endif %}
     </div>
@@ -144,7 +144,7 @@
 
     <div class="org-grid">
       {% for org in organizations %}
-        <a class="panel org-card" href="{% url 'organization_setup' org.slug %}">
+        <a class="panel org-card" href="{% url 'dashboard' %}">
           <div class="org-top">
             <span class="org-logo {% cycle 'purple' 'orange' %}">{{ org.name|slice:':1' }}</span>
             <span class="status connected"><i></i>Active</span>
@@ -160,7 +160,7 @@
       {% endfor %}
     </div>
   {% else %}
-    <a class="button primary" href="{% url 'add_organization' %}">
+    <a class="button primary" href="{% url 'dashboard' %}">
         <span>＋</span> New organization
     </a>
   {% endif %}

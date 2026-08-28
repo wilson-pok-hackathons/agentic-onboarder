@@ -14,7 +14,7 @@
   <aside class="sidebar">
     <a class="brand" href="{% url 'dashboard' %}">
       <span class="brand-mark">RS</span>
-      <span>Relay Scholar</span>
+      <span>Relay Scholars</span>
     </a>
 
     <nav>
@@ -24,7 +24,7 @@
       <a class="nav-item {% if page == 'runs' %}active{% endif %}" href="{% url 'dashboard' %}#runs">
         <span>◫</span> Onboardings
       </a>
-      <a class="nav-item {% if page == 'setup' %}active{% endif %}" href="{% url 'setup' %}">
+      <a class="nav-item {% if page == 'setup' %}active{% endif %}" href="{% url 'dashboard' %}">
         <span>◇</span> Organizations
       </a>
     </nav>

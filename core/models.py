@@ -1,232 +1,427 @@
-'''
+"""
 Data / storage layer
 
 Defines schemas of our database using Django ORM (object relational mapper)
 
 services.py (or views.py) reads/write data through models.py -> database
-'''
-
-
+"""
 
 import uuid
 
 from django.conf import settings
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 
+class TimestampedModel(models.Model):
+    '''Inherited by each model tracks when a row was created and when a row was updated.
+    Convenience tracker for db
+    '''
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
-# # =========================== ORGANIZATION CONFIGURATION SYSTEM ============================
-# # ==========================================================================================
-# #
-# # Defines what an organiation is and what custom profile fields it requires
-# #
-# # ==========================================================================================
-
-# class Field(models.Model):
-#     '''The table which describes the fields an organization can choose to collect for 
-#     its new onboardings
-
-#     key: unique identifier
-#     label: text shown in UI
-#     type: description of field
-#     '''
-#     key = models.SlugField(unique=True)
-#     label = models.CharField(max_length=120)
-#     type = models.CharField(max_length=40)
-
-#     def __str__(self):
-#         return self.label
+    class Meta:
+        abstract = True
 
 
-# class Organization(models.Model):
-#     '''The table which describes information collected about an organization
-
-#     owner: the User this organiation is associated with
-#     slug: url safe indentifier
-#     name: syntactically correct name of org
-#     entity_type: the type of organization (modeling agency, record label, etc...)
-#     description: description of organization
-#     fields: the fields an org collects for its new onboardings
-#     integrations:
-#     workflow:
-#     is_active:
-#     '''
-#     owner = models.ForeignKey(
-#         settings.AUTH_USER_MODEL,
-#         on_delete=models.CASCADE,
-#         related_name="organizations"
-#     )
-#     slug = models.SlugField(unique=True)
-#     name = models.CharField(max_length=160)
-#     entity_type = models.CharField(max_length=80)
-#     description = models.TextField(blank=True)
-#     # fields = models.ManyToManyField(
-#     #     "Field",
-#     #     through="OrganizationField",
-#     #     related_name="organizations",
-#     # )
-#     integrations = models.JSONField(default=list)
-#     workflow = models.JSONField(default=list)
-#     is_active = models.BooleanField(default=True)
-
-#     @property   # allows us to call this func like a field
-#     def required_fields(self):
-#         '''Dynamically queries OrganizationField bridge table to return list
-#         of slug strings for Fields the organization requires
-#         '''
-#         return list(
-#             # values_list uses the __ syntax to go to the Field table and grab a list of its keys
-#             OrganizationField
-#             .objects
-#             .filter(organization=self, required=True)
-#             .values_list("field__key", flat=True)
-#         )
-
-#     def __str__(self):
-#         return self.name
+# ========================== USER PREF ============================
+# =================================================================
+#
+# tables that store information about a users profile, what their
+# interest are, their level of competence, how often a digest is
+# sent etc
+#
+# =================================================================
 
 
-# class OrganizationField(models.Model):
-#     '''The table that acts as a join between the Field and Organization tables. Keeps
-#     the Field entries global and allows us to see what each organization strictly requires
+class ResearchProfile(TimestampedModel):
+    '''the profile of who a user is, what their use for the platform is, and how they
+    interact with the platform.
+    '''
+    class ExpertiseLevel(models.TextChoices):
+        '''restricts CharField choices options for expertise level'''
+        GENERAL = "general", "General reader"   # Django syntax that stores db term, user facing term
+        STUDENT = "student", "Student"
+        RESEARCHER = "researcher", "Researcher"
+        EXPERT = "expert", "Domain expert"
+ 
+    class SummaryStyle(models.TextChoices):
+        '''restricts CharField choices options for summary style'''
+        PLAIN = "plain", "Plain language"
+        TECHNICAL = "technical", "Technical"
+        BALANCED = "balanced", "Balanced"
 
-#     organization: the org unique identifier in Organization table
-#     field: the field unique indentifier in Field table
-#     required: true if org requires field, false otherwise
-#     '''
-#     organization = models.ForeignKey(
-#         Organization,
-#         on_delete=models.CASCADE,
-#         related_name="organization_fields",
-#     )
-#     field = models.ForeignKey(
-#         Field,
-#         on_delete=models.CASCADE,
-#         related_name="organization_fields",
-#     )
-#     required = models.BooleanField(default=False)
+    class QuerySyncStatus(models.TextChoices):
+        OK = "ok", "OK"
+        ERROR = "error", "Error"
 
-#     class Meta:
-#         '''Keeps the database from storing duplicate rows for an org<->field combo'''
-#         constraints = [
-#                     models.UniqueConstraint(
-#                         fields=["organization", "field"],
-#                         name="unique_org_field",
-#                     )
-#                 ]
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
+    # every account gets exactly one ResearchProfile
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="research_profile",
+    )
+    expertise_level = models.CharField(
+        max_length=20,
+        choices=ExpertiseLevel.choices,
+        default=ExpertiseLevel.GENERAL,
+    )
 
-# # ==================== ORGANIZATION ONBOARDING ENTRY =====================
-# # ========================================================================
-# #
-# # 
-# #
+    # blob of holistic context per user, captures relationships between interests
+    # that discrete tags can't. Powers LLM's qualitative judgement
+    research_focus = models.TextField(
+        blank=True,
+        default="",
+        help_text=(
+            "Freeform description of the user's research interests/focus, "
+            "in their own words. Fed directly to the LLM as context when "
+            "judging paper relevance and ranking"
+        )
+    )
+ 
+    summary_style = models.CharField(
+        max_length=20,
+        choices=SummaryStyle.choices,
+        default=SummaryStyle.BALANCED,
+    )
+    timezone = models.CharField(max_length=64, default="UTC")
+    last_paper_check_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=(
+            "When we last queried Semantic Scholar for new papers for "
+            "this user. Papers published after this timestamp are "
+            "considered 'new' on the next check. Null until the first "
+            "check ever runs."
+        ),
+    )
+    query_sync_status = models.CharField(
+        max_length=20,
+        choices=QuerySyncStatus.choices,
+        default=QuerySyncStatus.OK,
+    )
+    setup_completed = models.BooleanField(default=False)
 
-
-
-# # =========================== EXECUTION SYSTEM ============================
-# # =========================================================================
-# #
-# # Tracks the live, step by step background agent automations
-# #
-# # ==========================================================================
-
-# class OnboardingRun(models.Model):
-#     """One concrete attempt to onboard one person/entity.
-
-#     Organization holds the reusable recipe; OnboardingRun holds the live data
-#     and overall state for one execution of that recipe.
-#     """
-
-#     class Status(models.TextChoices):
-#         # TextChoices keeps database values stable while providing friendly
-#         # labels through `run.get_status_display()` in templates.
-#         DRAFT = "draft", "Draft"
-#         RUNNING = "running", "Running"
-#         WAITING = "waiting_for_input", "Needs input"
-#         FAILED = "failed", "Failed"
-#         COMPLETED = "completed", "Completed"
-
-#     # UUIDs are safer to expose in URLs than predictable integer IDs.
-#     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-#     # Deleting an organization also deletes its runs (`CASCADE`). The
-#     # `related_name` enables reverse queries such as organization.runs.all().
-#     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name="runs")
-#     entity_name = models.CharField(max_length=160)
-#     # Flexible extracted/form data: {"name": ..., "email": ..., ...}.
-#     entity_data = models.JSONField(default=dict)
-#     source_text = models.TextField(blank=True)
-#     status = models.CharField(max_length=32, choices=Status.choices, default=Status.DRAFT)
-#     missing_fields = models.JSONField(default=list)
-#     created_at = models.DateTimeField(auto_now_add=True)
-#     updated_at = models.DateTimeField(auto_now=True)
-#     completed_at = models.DateTimeField(null=True, blank=True)
-
-#     @property
-#     def progress(self):
-#         """Return a display-ready completion percentage from 0 through 100."""
-#         # `self.steps` exists because WorkflowStep.run uses related_name="steps".
-#         total = self.steps.count()
-#         complete = self.steps.filter(status=WorkflowStep.Status.COMPLETED).count()
-#         return round((complete / total) * 100) if total else 0
-
-#     def __str__(self):
-#         return f"{self.entity_name} · {self.organization.entity_type}"
+    def __str__(self):
+        return f"Research profile for {self.user}"
 
 
-# class WorkflowStep(models.Model):
-#     """A single tool action belonging to an OnboardingRun.
+class UserInterest(TimestampedModel):
+    '''tracks the actual interest of a user'''
+    class Kind(models.TextChoices):
+        '''restricts the CharField choices of kind. Decribes the type of interest a
+        row is concerning
+        '''
+        TOPIC = "topic", "Topic"        # layer 1 filter, one of the semantic scholar API valid fields
+        KEYWORD = "keyword", "Keyword"  # layer 2 filter, free entry user specified topic (e.g. bioinformatics)
+        AUTHOR = "author", "Author"     # layer 2 filter, free entry user specified author
+        VENUE = "venue", "Journal or conference"    # layer 2 filter, free entry user specified venue
+        EXCLUDE = "exclude", "Exclude"  # layer 2 filter, free entry user specified exclusion
 
-#     Steps are copied from the organization configuration when a run starts.
-#     That snapshot prevents later configuration edits from changing a run that
-#     is already in progress.
-#     """
+    class FieldOfStudy(models.TextChoices):
+        '''the 23 canonical fields available via the semantic scholar API'''
+        COMPUTER_SCIENCE = "Computer Science", "Computer Science"
+        MEDICINE = "Medicine", "Medicine"
+        CHEMISTRY = "Chemistry", "Chemistry"
+        BIOLOGY = "Biology", "Biology"
+        MATERIALS_SCIENCE = "Materials Science", "Materials Science"
+        PHYSICS = "Physics", "Physics"
+        GEOLOGY = "Geology", "Geology"
+        PSYCHOLOGY = "Psychology", "Psychology"
+        ART = "Art", "Art"
+        HISTORY = "History", "History"
+        GEOGRAPHY = "Geography", "Geography"
+        SOCIOLOGY = "Sociology", "Sociology"
+        BUSINESS = "Business", "Business"
+        POLITICAL_SCIENCE = "Political Science", "Political Science"
+        ECONOMICS = "Economics", "Economics"
+        PHILOSOPHY = "Philosophy", "Philosophy"
+        MATHEMATICS = "Mathematics", "Mathematics"
+        ENGINEERING = "Engineering", "Engineering"
+        ENVIRONMENTAL_SCIENCE = "Environmental Science", "Environmental Science"
+        AGRICULTURAL_AND_FOOD_SCIENCES = "Agricultural and Food Sciences", "Agricultural and Food Sciences"
+        EDUCATION = "Education", "Education"
+        LAW = "Law", "Law"
+        LINGUISTICS = "Linguistics", "Linguistics"
 
-#     class Status(models.TextChoices):
-#         PENDING = "pending", "Pending"
-#         RUNNING = "running", "Running"
-#         BLOCKED = "blocked", "Blocked"
-#         FAILED = "failed", "Failed"
-#         COMPLETED = "completed", "Complete"
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="research_interests",
+    )
 
-#     run = models.ForeignKey(OnboardingRun, on_delete=models.CASCADE, related_name="steps")
-#     # `key` is the stable machine identifier; `title` is presentation text.
-#     key = models.SlugField()
-#     title = models.CharField(max_length=160)
-#     # Capability describes WHAT to do; tool_name describes WHICH adapter does
-#     # it. This separation lets create_calendar map to Google Calendar today and
-#     # another calendar provider later.
-#     capability = models.CharField(max_length=100)
-#     tool_name = models.CharField(max_length=120, default="Demo adapter")
-#     position = models.PositiveSmallIntegerField()
-#     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
-#     # Entity-data keys that must be present before this step can execute.
-#     requires = models.JSONField(default=list)
-#     summary = models.TextField(blank=True)
-#     result = models.JSONField(default=dict)
-#     attempt_count = models.PositiveSmallIntegerField(default=0)
-#     started_at = models.DateTimeField(null=True, blank=True)
-#     completed_at = models.DateTimeField(null=True, blank=True)
+    # describes the category of this row
+    kind = models.CharField(
+        max_length=20,
+        choices=Kind.choices,
+        default=Kind.TOPIC,
+    )
+    label = models.CharField(max_length=160)
 
-#     class Meta:
-#         # Calling run.steps.all() automatically returns execution-plan order.
-#         ordering = ["position"]
-#         # A run cannot accidentally contain two steps with the same key.
-#         constraints = [models.UniqueConstraint(fields=["run", "key"], name="unique_run_step")]
+    # text used to filter papers AFTER layer 1
+    query = models.CharField(
+        max_length=500,
+        help_text="Provider search query or normalized matching text.",
+    )
+    weight = models.DecimalField(
+        max_digits=4,
+        decimal_places=3,
+        default=1,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1),
+        ],
+    )
+    active = models.BooleanField(default=True)
 
-#     def __str__(self):
-#         return self.title
+    class Meta:
+        '''concerns the ordering when accessing the table and maintaining db integrity'''
+        ordering = ["-weight", "label"]     # descending order by weight, then by label
+
+        # makes sure no rows duplicate user, kind, query
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "kind", "query"],
+                name="unique_user_interest_query",
+            )
+        ]
+
+    def __str__(self):
+        return self.label
 
 
-# class RunEvent(models.Model):
-#     """Append-only activity/history entry for explaining what the agent did."""
+# ========================== PAPER DATA ============================
+# ==================================================================
+#
+# tables to store paper data across all users
+#
+# ==================================================================
 
-#     run = models.ForeignKey(OnboardingRun, on_delete=models.CASCADE, related_name="events")
-#     kind = models.CharField(max_length=40, default="info")
-#     message = models.TextField()
-#     metadata = models.JSONField(default=dict)
-#     created_at = models.DateTimeField(auto_now_add=True)
 
-#     class Meta:
-#         # Activity feeds show the newest event first by default.
-#         ordering = ["-created_at"]
+class Paper(TimestampedModel):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    semantic_scholar_id = models.CharField(
+        max_length=64,
+        unique=True,
+        null=True,
+        blank=True,
+    )
+    corpus_id = models.BigIntegerField(
+        unique=True,
+        null=True,
+        blank=True,
+    )
+    doi = models.CharField(
+        max_length=255,
+        unique=True,
+        null=True,
+        blank=True,
+    )
+
+    title = models.TextField()
+    abstract = models.TextField(blank=True)
+    publication_date = models.DateField(null=True, blank=True)
+    publication_year = models.PositiveSmallIntegerField(null=True, blank=True)
+    venue = models.CharField(max_length=300, blank=True)
+    publication_types = models.JSONField(default=list, blank=True)
+
+    url = models.URLField(max_length=1000, blank=True)
+    open_access_pdf_url = models.URLField(max_length=1000, blank=True)
+    is_open_access = models.BooleanField(default=False)
+
+    citation_count = models.PositiveIntegerField(default=0)
+    influential_citation_count = models.PositiveIntegerField(default=0)
+    reference_count = models.PositiveIntegerField(default=0)
+
+    fields_of_study = models.JSONField(default=list, blank=True)
+ 
+    class Meta:
+        ordering = ["-publication_date", "-created_at"]
+        indexes = [
+            models.Index(fields=["publication_date"]),
+            models.Index(fields=["publication_year"]),
+            models.Index(fields=["citation_count"]),
+        ]
+
+    def __str__(self):
+        return self.title
+
+
+class Author(TimestampedModel):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    semantic_scholar_id = models.CharField(
+        max_length=64,
+        unique=True,
+        null=True,
+        blank=True,
+    )
+    name = models.CharField(max_length=300)
+    affiliations = models.JSONField(default=list, blank=True)
+    homepage_url = models.URLField(max_length=1000, blank=True)
+
+    papers = models.ManyToManyField(
+        Paper,
+        through="PaperAuthor",
+        related_name="authors",
+    )
+
+    def __str__(self):
+        return self.name
+
+
+class PaperAuthor(models.Model):
+    paper = models.ForeignKey(
+        Paper,
+        on_delete=models.CASCADE,
+        related_name="author_links",
+    )
+    author = models.ForeignKey(
+        Author,
+        on_delete=models.CASCADE,
+        related_name="paper_links",
+    )
+    position = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ["position"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["paper", "author"],
+                name="unique_paper_author",
+            ),
+            models.UniqueConstraint(
+                fields=["paper", "position"],
+                name="unique_paper_position",
+            ),
+        ]
+
+
+# ========================== PER USER PAPER DATA ============================
+# ===========================================================================
+#
+# personalized data for paper data for a user
+#
+# ==========================================================================
+
+
+class UserPaper(TimestampedModel):
+    class State(models.TextChoices):
+        UNREAD = "unread", "Unread"
+        READ = "read", "Read"
+        SAVED = "saved", "Saved"
+        DISMISSED = "dismissed", "Dismissed"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="paper_states",
+    )
+    paper = models.ForeignKey(
+        Paper,
+        on_delete=models.CASCADE,
+        related_name="user_states",
+    )
+    state = models.CharField(
+        max_length=20,
+        choices=State.choices,
+        default=State.UNREAD,
+    )
+    latest_relevance_score = models.DecimalField(
+        max_digits=6,
+        decimal_places=5,
+        null=True,
+        blank=True,
+    )
+    source_query = models.CharField(max_length=500, blank=True)
+    source_item_id = models.CharField(max_length=255, blank=True)
+    latest_rationale = models.TextField(blank=True)
+    first_recommended_at = models.DateTimeField(null=True, blank=True)
+    last_recommended_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "paper"],
+                name="unique_user_paper",
+            )
+        ]
+
+
+# ========================== LLM OUTPUTS ============================
+# =================================================================
+#
+# holds what the LLM help fill out
+#
+# =================================================================
+
+
+class Digest(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    title = models.CharField(max_length=255)
+    overview = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class DigestItem(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    digest = models.ForeignKey(
+        Digest,
+        on_delete=models.CASCADE,
+        related_name="items",
+    )
+    paper = models.ForeignKey(Paper, on_delete=models.CASCADE)
+    rank = models.PositiveSmallIntegerField()
+    summary = models.TextField()
+
+
+class FeedbackEvent(models.Model):
+    class Action(models.TextChoices):
+        RELEVANT = "relevant", "Relevant"
+        NOT_RELEVANT = "not_relevant", "Not relevant"
+        SAVE = "save", "Save"
+        UNSAVE = "unsave", "Unsave"
+        DISMISS = "dismiss", "Dismiss"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="research_feedback",
+    )
+    paper = models.ForeignKey(
+        Paper,
+        on_delete=models.CASCADE,
+        related_name="feedback_events",
+    )
+    digest_item = models.ForeignKey(
+        DigestItem,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="feedback_events",
+    )
+    action = models.CharField(max_length=24, choices=Action.choices)
+    reason = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+
+class ProcessingRun(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+    )
+    status = models.CharField(max_length=20, default="pending")
+    error_message = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
