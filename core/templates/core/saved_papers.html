@@ -1,0 +1,60 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Saved papers · Relay Scholars{% endblock %}
+{% block crumb %}Saved papers{% endblock %}
+
+{% block content %}
+<section class="page-heading">
+  <div>
+    <p class="kicker">YOUR LIBRARY</p>
+    <h1>Saved papers</h1>
+    <p>Keep promising work close and organize what you want to revisit.</p>
+  </div>
+  <button class="button secondary" type="button">＋ Create collection</button>
+</section>
+
+<div class="filter-bar">
+  <div class="search-box">
+    ⌕
+    <input type="search" placeholder="Search titles, authors, or journals" aria-label="Search saved papers">
+  </div>
+  <select aria-label="Filter by collection">
+    <option>All collections</option>
+    <option>Read next</option>
+    <option>Protein models</option>
+  </select>
+  <select aria-label="Sort saved papers">
+    <option>Recently saved</option>
+  </select>
+</div>
+
+<div class="library-layout">
+  <aside class="collections panel">
+    <h3>Collections</h3>
+    <button class="collection active" type="button">
+      <span>◇</span>
+      All saved
+      <b>7</b>
+    </button>
+    <button class="collection" type="button">
+      <span>○</span>
+      Read next
+      <b>3</b>
+    </button>
+    <button class="collection" type="button">
+      <span>○</span>
+      Protein models
+      <b>2</b>
+    </button>
+    <button class="collection" type="button">
+      <span>○</span>
+      Climate methods
+      <b>2</b>
+    </button>
+  </aside>
+
+  <div class="paper-list saved-list">
+    {% include 'core/partials/paper_cards.html' %}
+  </div>
+</div>
+{% endblock %}

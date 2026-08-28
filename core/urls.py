@@ -18,6 +18,10 @@ from . import views
 urlpatterns = [
     # Auth
     path("", views.dashboard, name="dashboard"),
+    path("digests/", views.digests, name="digests"),
+    path("saved/", views.saved_papers, name="saved_papers"),
+    path("preferences/", views.preferences, name="preferences"),
+    path("settings/", views.settings_page, name="settings"),
     path("signup/", views.user_signup, name="signup"),
     path("login/", views.user_login, name="login"),
     path("logout/", auth_views.LogoutView.as_view(next_page="login"), name="logout"),

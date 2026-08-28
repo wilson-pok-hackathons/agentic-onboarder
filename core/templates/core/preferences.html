@@ -1,0 +1,150 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Preferences · Relay Scholars{% endblock %}
+{% block crumb %}Preferences{% endblock %}
+
+{% block content %}
+<section class="page-heading compact-heading">
+  <div>
+    <p class="kicker">PERSONALIZATION</p>
+    <h1>Research preferences</h1>
+    <p>Shape what Relay looks for, prioritizes, and leaves out.</p>
+  </div>
+  <button class="button primary" id="save-prefs" type="button">Save changes</button>
+</section>
+
+<div class="settings-layout">
+  <aside class="settings-nav panel">
+    <a class="active" href="#interests">Interests</a>
+    <a href="#people">Authors & organizations</a>
+    <a href="#boundaries">Research boundaries</a>
+    <a href="#description">About your research</a>
+  </aside>
+
+  <div class="settings-stack">
+    <section class="panel form-section" id="interests">
+      <div class="form-heading">
+        <span>01</span>
+        <div>
+          <h2>Topics and subtopics</h2>
+          <p>Select the areas that should influence your feed most strongly.</p>
+        </div>
+      </div>
+      <label for="topic-search">Search research topics</label>
+      <div class="input-with-icon">
+        ⌕
+        <input id="topic-search" type="search" placeholder="Try “protein folding” or “climate modeling”">
+      </div>
+      <div class="selected-label">Selected interests <span>5</span></div>
+      <div class="editable-chips">
+        <button type="button">Bioinformatics ×</button>
+        <button type="button">Immunology ×</button>
+        <button type="button">Neural networks ×</button>
+        <button type="button">Organic chemistry ×</button>
+        <button type="button">Oceanography ×</button>
+      </div>
+      <p class="hint">Drag interests to change their priority in future recommendations.</p>
+    </section>
+
+    <section class="panel form-section" id="people">
+      <div class="form-heading">
+        <span>02</span>
+        <div>
+          <h2>Authors and organizations</h2>
+          <p>Optionally follow specific researchers or institutions.</p>
+        </div>
+      </div>
+      <div class="two-inputs">
+        <div>
+          <label for="author-search">Authors</label>
+          <div class="input-with-icon">
+            ⌕
+            <input id="author-search" type="search" placeholder="Search authors">
+          </div>
+        </div>
+        <div>
+          <label for="org-search">Organizations</label>
+          <div class="input-with-icon">
+            ⌕
+            <input id="org-search" type="search" placeholder="Search institutions">
+          </div>
+        </div>
+      </div>
+      <div class="empty-inline">
+        No authors or organizations followed yet. Your topic preferences will still work.
+      </div>
+    </section>
+
+    <section class="panel form-section" id="boundaries">
+      <div class="form-heading">
+        <span>03</span>
+        <div>
+          <h2>Research boundaries</h2>
+          <p>Control the material that can enter your recommendations.</p>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div>
+          <label for="published-after">Published after</label>
+          <select id="published-after">
+            <option>January 2024</option>
+            <option>January 2023</option>
+          </select>
+        </div>
+        <div>
+          <label for="publication-types">Publication types</label>
+          <select id="publication-types">
+            <option>All research</option>
+            <option>Journal articles</option>
+            <option>Preprints</option>
+          </select>
+        </div>
+        <div>
+          <label for="access-type">Access</label>
+          <select id="access-type">
+            <option>Any access type</option>
+            <option>Open access only</option>
+          </select>
+        </div>
+        <div>
+          <label for="language">Language</label>
+          <select id="language">
+            <option>English</option>
+            <option>Any language</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel form-section" id="description">
+      <div class="form-heading">
+        <span>04</span>
+        <div>
+          <h2>Describe what you care about</h2>
+          <p>Natural language helps Relay understand connections that categories miss.</p>
+        </div>
+      </div>
+      <textarea id="research-description" rows="6" aria-label="Describe your research interests">I’m interested in computational methods that explain biological systems, especially protein function, immune response, and interpretable models. I also follow machine-learning applications in ocean science.</textarea>
+      <div class="textarea-foot">
+        <span>Used to explain why papers match your work</span>
+        <span>266 / 800</span>
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  (function () {
+    const save = document.getElementById("save-prefs");
+    if (!save) return;
+    save.addEventListener("click", function () {
+      this.textContent = "✓ Preferences saved";
+      setTimeout(function () {
+        save.textContent = "Save changes";
+      }, 1600);
+    });
+  })();
+</script>
+{% endblock %}

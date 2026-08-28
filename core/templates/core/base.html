@@ -4,107 +4,123 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}Relay{% endblock %} · Agentic onboarding</title>
+  <title>{% block title %}Relay Scholars{% endblock %}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{% static 'core/app.css' %}">
+  <link rel="stylesheet" href="{% static 'core/research.css' %}">
 </head>
-<body>
-  <aside class="sidebar">
+<body class="research-app">
+  <aside class="sidebar research-sidebar" id="sidebar">
     <a class="brand" href="{% url 'dashboard' %}">
-      <span class="brand-mark">RS</span>
-      <span>Relay Scholar</span>
+      <span class="brand-mark">R</span>
+      <span>Relay<span class="brand-soft"> Scholars</span></span>
     </a>
 
+    <p class="nav-label">Workspace</p>
     <nav>
       <a class="nav-item {% if page == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}">
-        <span>⌂</span> Dashboard
+        <span class="nav-icon">⌂</span>
+        Home
       </a>
-      <a class="nav-item {% if page == 'runs' %}active{% endif %}" href="{% url 'dashboard' %}#runs">
-        <span>◫</span> Onboardings
+      <a class="nav-item {% if page == 'digests' %}active{% endif %}" href="{% url 'digests' %}">
+        <span class="nav-icon">◫</span>
+        Digests
+        <span class="nav-count">3</span>
       </a>
-      <a class="nav-item {% if page == 'setup' %}active{% endif %}" href="{% url 'setup' %}">
-        <span>◇</span> Organizations
+      <a class="nav-item {% if page == 'saved' %}active{% endif %}" href="{% url 'saved_papers' %}">
+        <span class="nav-icon">◇</span>
+        Saved papers
       </a>
     </nav>
 
-    <div class="sidebar-foot">
-      <div class="status-dot"></div>
-      <div>
-        <strong>Agent online</strong>
-        <small>Local simulation</small>
+    <p class="nav-label nav-label-spaced">Personalize</p>
+    <nav>
+      <a class="nav-item {% if page == 'preferences' %}active{% endif %}" href="{% url 'preferences' %}">
+        <span class="nav-icon">✦</span>
+        Preferences
+      </a>
+      <a class="nav-item {% if page == 'settings' %}active{% endif %}" href="{% url 'settings' %}">
+        <span class="nav-icon">⚙</span>
+        Settings
+      </a>
+    </nav>
+
+    <div class="profile-card">
+      <div class="profile-row">
+        <div class="avatar">{{ user.first_name|first|default:user.username|first|upper }}</div>
+        <div>
+          <strong>{{ user.get_full_name|default:user.username }}</strong>
+          <small>Research profile active</small>
+        </div>
+        <button class="icon-button" type="button" aria-label="Profile options">•••</button>
       </div>
+      <div class="profile-meter"><span></span></div>
+      <small>Profile confidence · 82%</small>
     </div>
   </aside>
 
-  <main class="main">
-    <header class="topbar">
-      <div>
-        <span class="eyebrow">OPERATIONS CONSOLE</span>
+  <main class="main research-main">
+    <header class="topbar research-topbar">
+      <button class="mobile-menu" id="menu-toggle" type="button" aria-label="Toggle navigation">☰</button>
+      <div class="crumb">
+        <span>Relay Scholars</span>
+        <b>/</b>
+        {% block crumb %}Home{% endblock %}
       </div>
- 
-      {% if user.is_authenticated %}
-      <div class="avatar-menu">
-        <button type="button" class="avatar-trigger" id="avatar-trigger" aria-haspopup="true" aria-expanded="false">
-          <div class="avatar">{{ user.first_name|first|default:user.username|first|upper }}{{ user.last_name|first|upper }}</div>
+      <div class="top-actions">
+        <button class="icon-button notification-button" type="button" aria-label="Notifications">
+          ♢
+          <span></span>
         </button>
- 
-        <div class="avatar-dropdown" id="avatar-dropdown">
-          <div class="avatar-dropdown-user">
-            <strong>{{ user.get_full_name|default:user.username }}</strong>
-            <small>{{ user.email }}</small>
+        <div class="avatar-menu">
+          <button class="avatar-trigger" id="avatar-trigger" type="button" aria-label="Account menu">
+            <div class="avatar">{{ user.first_name|first|default:user.username|first|upper }}</div>
+          </button>
+          <div class="avatar-dropdown" id="avatar-dropdown">
+            <div class="avatar-dropdown-user">
+              <strong>{{ user.get_full_name|default:user.username }}</strong>
+              <small>{{ user.email|default:"Researcher" }}</small>
+            </div>
+            <form method="POST" action="{% url 'logout' %}">
+              {% csrf_token %}
+              <button type="submit">Log out</button>
+            </form>
           </div>
-          <form method="POST" action="{% url 'logout' %}">
-            {% csrf_token %}
-            <button type="submit">Log out</button>
-          </form>
         </div>
       </div>
-      {% endif %}
     </header>
 
-    <div class="content">
-      {% if messages %}
-      {% for message in messages %}
-      <div class="flash {{ message.tags }}">{{ message }}</div>
-      {% endfor %}
-      {% endif %}
-
+    <div class="content research-content">
       {% block content %}{% endblock %}
     </div>
   </main>
 
-  {% block scripts %}
-    <script>
-      (function () {
-        var trigger = document.getElementById('avatar-trigger');
-        var dropdown = document.getElementById('avatar-dropdown');
-        if (!trigger || !dropdown) return;
- 
-        function closeDropdown() {
-          dropdown.classList.remove('open');
-          trigger.setAttribute('aria-expanded', 'false');
-        }
- 
-        trigger.addEventListener('click', function (e) {
-          e.stopPropagation();
-          var isOpen = dropdown.classList.toggle('open');
-          trigger.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-        });
- 
-        document.addEventListener('click', function (e) {
-          if (!dropdown.contains(e.target) && e.target !== trigger) {
-            closeDropdown();
-          }
-        });
- 
-        document.addEventListener('keydown', function (e) {
-          if (e.key === 'Escape') closeDropdown();
-        });
-      })();
-    </script>
-  {% endblock %}
+  <script>
+    (function () {
+      const trigger = document.getElementById("avatar-trigger");
+      const dropdown = document.getElementById("avatar-dropdown");
+      const menuToggle = document.getElementById("menu-toggle");
+      const sidebar = document.getElementById("sidebar");
 
+      if (trigger && dropdown) {
+        trigger.addEventListener("click", function (event) {
+          event.stopPropagation();
+          dropdown.classList.toggle("open");
+        });
+        document.addEventListener("click", function () {
+          dropdown.classList.remove("open");
+        });
+      }
+
+      if (menuToggle && sidebar) {
+        menuToggle.addEventListener("click", function () {
+          sidebar.classList.toggle("open");
+        });
+      }
+    })();
+  </script>
+  {% block scripts %}{% endblock %}
 </body>
 </html>

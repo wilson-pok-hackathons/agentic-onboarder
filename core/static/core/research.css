@@ -1,0 +1,21 @@
+/* Final cascade overrides for the Relay Scholars interface. */
+body.research-app { background:#f6f7f5; color:#18211e; }
+aside.research-sidebar { width:248px; background:#13231e; padding:26px 18px 20px; }
+main.research-main { margin-left:248px; }
+header.research-topbar { height:68px; padding:0 36px; background:rgba(250,251,249,.92); }
+div.research-content { max-width:1320px; padding:44px 46px 80px; }
+.research-app .panel { background:#fff; border:1px solid #e1e5e2; border-radius:12px; box-shadow:0 8px 24px rgba(26,42,35,.025); }
+.research-app .button { border-radius:8px; padding:10px 15px; font:600 12px 'DM Sans',sans-serif; }
+.research-app .button.primary { background:#193b30; color:#fff; border-color:#193b30; }
+.research-app .brand { font-size:18px; }
+.research-app .nav-item { padding:10px 12px; }
+.research-app .nav-item.active { background:#263a33; color:#fff; }
+.research-app .section-heading { margin:38px 0 15px; }
+.research-app .paper-card { padding:22px; }
+@media(max-width:760px){
+  aside.research-sidebar{transform:translateX(-100%);width:248px}
+  aside.research-sidebar.open{transform:translateX(0)}
+  main.research-main{margin-left:0}
+  header.research-topbar{padding:0 18px}
+  div.research-content{padding:28px 18px 60px}
+}

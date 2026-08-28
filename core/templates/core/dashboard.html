@@ -1,186 +1,193 @@
 {% extends 'core/base.html' %}
 
-{% block title %}Overview{% endblock %}
+{% block title %}Home · Relay Scholars{% endblock %}
+{% block crumb %}Home{% endblock %}
 
 {% block content %}
-<!-- header -->
-  <section class="hero-row">
-    <!--  render todays date and greeting -->
-    <div>
-      <p class="kicker">
-        {% filter upper %}
-          {% now "l, F j" %}
-        {% endfilter %}
-      </p>
-      <h1 id="greeting"></h1>
-      <!-- choose greeting based on if currently logged in user is owner of any orgs -->
-      <p>
-        {% if organizations %}
-          Here’s what your onboarding agent is handling.
-        {% else %}
-          Get started by adding your first organiztion.
-        {% endif %}
-      </p>
-    </div>
+<section class="page-heading home-heading">
+  <div>
+    <p class="kicker">{% now "l, F j" %}</p>
+    <h1><span id="greeting">Good evening</span>, {{ user.first_name|default:user.username }}</h1>
+    <p>Your personalized view of what matters in research right now.</p>
+  </div>
+  <button class="button primary" id="refresh-button" type="button">
+    <span>↻</span>
+    Check for new research
+  </button>
+</section>
 
-    <!-- if currently logged in user is owner of any orgs, show new onboarding button -->
-    {% if organizations %}
-      <a class="button primary" href="{% url 'new_onboarding' %}">
-        <span>＋</span> New onboarding
-      </a>
-    {% endif %}
-  </section>
+<div class="update-banner" id="update-banner">
+  <div class="update-symbol">✦</div>
+  <div>
+    <strong>8 new papers are ready</strong>
+    <p>We found new work across Bioinformatics, Immunology, and Neural Networks.</p>
+  </div>
+  <button class="button light" id="show-updates" type="button">Show updates</button>
+  <button class="banner-close" id="dismiss-banner" type="button" aria-label="Dismiss">×</button>
+</div>
 
-  <!-- if currrently logged in user has any orgs + onboardings data -->
-  {% if organizations %}
-    <section class="metric-grid">
-      <div class="metric">
-        <div class="metric-icon lavender">↗</div>
-        <div>
-          <span>Active runs</span>
-          <strong>{{ counts.active }}</strong>
-          <small>Agent working now</small>
-        </div>
-      </div>
-
-      <div class="metric">
-        <div class="metric-icon amber">!</div>
-        <div>
-          <span>Needs attention</span>
-          <strong>{{ counts.attention }}</strong>
-          <small>Waiting for a person</small>
-        </div>
-      </div>
-
-      <div class="metric">
-        <div class="metric-icon green">✓</div>
-        <div>
-          <span>Completed</span>
-          <strong>{{ counts.completed }}</strong>
-          <small>Verified onboardings</small>
-        </div>
-      </div>
-
-      <div class="metric">
-        <div class="metric-icon slate">×</div>
-        <div>
-          <span>Failed</span>
-          <strong>{{ counts.failed }}</strong>
-          <small>Requires investigation</small>
-        </div>
-      </div>
-    </section>
-
-    <section class="section-head" id="runs">
+<section class="dashboard-grid summary-grid">
+  <article class="panel briefing-card">
+    <div class="panel-heading">
       <div>
-        <h2>Recent onboardings</h2>
-        <p>Every action your agent has taken, in one place.</p>
+        <span class="section-kicker">Research briefing</span>
+        <h2>This week in your research world</h2>
       </div>
-      <a href="{% url 'new_onboarding' %}">Start a run →</a>
-    </section>
-
-    <!-- a section describing past runs -->
-    <div class="panel table-panel">
-      {% if runs %}
-        <table>
-          <thead>
-            <tr>
-              <th>Person / entity</th>
-              <th>Organization</th>
-              <th>Status</th>
-              <th>Progress</th>
-              <th>Updated</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for run in runs %}
-              <tr>
-                <td>
-                  <a class="entity" href="{% url 'run_detail' run.id %}">
-                    <span class="entity-avatar">{{ run.entity_name|slice:':1' }}</span>
-                    <span>
-                      <strong>{{ run.entity_name }}</strong>
-                      <small>{{ run.organization.entity_type }} onboarding</small>
-                    </span>
-                  </a>
-                </td>
-                <td>{{ run.organization.name }}</td>
-                <td>
-                  <span class="status {{ run.status }}">
-                    <i></i>{{ run.get_status_display }}
-                  </span>
-                </td>
-                <td>
-                  <div class="mini-progress">
-                    <span style="width:{{ run.progress }}%"></span>
-                  </div>
-                  <small>{{ run.progress }}%</small>
-                </td>
-                <td>{{ run.updated_at|timesince }} ago</td>
-                <td>
-                  <a class="arrow" href="{% url 'run_detail' run.id %}">→</a>
-                </td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      {% else %}
-        <div class="empty">
-          <div>✦</div>
-          <h3>Your agent is ready</h3>
-          <p>Start an onboarding to watch it plan, execute, pause, and verify each operation.</p>
-          <a class="button primary" href="{% url 'new_onboarding' %}">Start first onboarding</a>
-        </div>
-      {% endif %}
+      <span class="pill fresh">Fresh</span>
     </div>
+    <p class="briefing-copy">
+      Protein language models are moving beyond structure prediction toward functional annotation,
+      while multimodal approaches are beginning to connect molecular sequences with clinical evidence.
+    </p>
+    <div class="briefing-meta">
+      <span>Based on 42 papers</span>
+      <span>•</span>
+      <span>5 minute read</span>
+    </div>
+    <a href="{% url 'digests' %}" class="text-link">Read the full briefing <span>→</span></a>
+  </article>
 
-    <section class="section-head">
+  <article class="panel activity-card">
+    <div class="panel-heading">
       <div>
-        <h2>Organizations</h2>
-        <p>The same agent, configured for different operations.</p>
+        <span class="section-kicker">Research activity</span>
+        <h2>Publications over time</h2>
       </div>
-    </section>
-
-    <div class="org-grid">
-      {% for org in organizations %}
-        <a class="panel org-card" href="{% url 'organization_setup' org.slug %}">
-          <div class="org-top">
-            <span class="org-logo {% cycle 'purple' 'orange' %}">{{ org.name|slice:':1' }}</span>
-            <span class="status connected"><i></i>Active</span>
-          </div>
-          <h3>{{ org.name }}</h3>
-          <p>{{ org.description }}</p>
-          <div class="chips">
-            <span>{{ org.entity_type }}</span>
-            <span>{{ org.workflow|length }} actions</span>
-            <span>{{ org.integrations|length }} tools</span>
-          </div>
-        </a>
-      {% endfor %}
+      <select aria-label="Activity range">
+        <option>Last 6 months</option>
+      </select>
     </div>
-  {% else %}
-    <a class="button primary" href="{% url 'add_organization' %}">
-        <span>＋</span> New organization
-    </a>
-  {% endif %}
+    <div class="chart-wrap">
+      <div class="chart-y">
+        <span>40</span>
+        <span>30</span>
+        <span>20</span>
+        <span>10</span>
+        <span>0</span>
+      </div>
+      <div class="chart-bars">
+        <i style="height:32%"></i>
+        <i style="height:46%"></i>
+        <i style="height:41%"></i>
+        <i style="height:64%"></i>
+        <i style="height:57%"></i>
+        <i class="current" style="height:86%"></i>
+      </div>
+    </div>
+    <div class="chart-labels">
+      <span>Mar</span>
+      <span>Apr</span>
+      <span>May</span>
+      <span>Jun</span>
+      <span>Jul</span>
+      <span>Aug</span>
+    </div>
+  </article>
+</section>
+
+<section class="section-heading">
+  <div>
+    <span class="section-kicker">Signals</span>
+    <h2>Emerging in your interests</h2>
+  </div>
+  <a href="{% url 'preferences' %}" class="text-link">Tune interests →</a>
+</section>
+
+<div class="trend-grid">
+  <article class="panel trend-card">
+    <span class="trend-index">01</span>
+    <div class="trend-icon lilac">⌁</div>
+    <h3>Protein language models</h3>
+    <p>Rapid growth in functional annotation and zero-shot protein engineering.</p>
+    <div class="trend-bottom">
+      <strong>+34%</strong>
+      <span>12 new papers</span>
+    </div>
+  </article>
+  <article class="panel trend-card">
+    <span class="trend-index">02</span>
+    <div class="trend-icon peach">◎</div>
+    <h3>Spatial transcriptomics</h3>
+    <p>New foundation models link tissue morphology with gene expression.</p>
+    <div class="trend-bottom">
+      <strong>+21%</strong>
+      <span>8 new papers</span>
+    </div>
+  </article>
+  <article class="panel trend-card">
+    <span class="trend-index">03</span>
+    <div class="trend-icon blue">⌬</div>
+    <h3>Ocean carbon modeling</h3>
+    <p>Higher-resolution models revise estimates of coastal carbon uptake.</p>
+    <div class="trend-bottom">
+      <strong>+18%</strong>
+      <span>6 new papers</span>
+    </div>
+  </article>
+</div>
+
+<section class="section-heading">
+  <div>
+    <span class="section-kicker">For you</span>
+    <h2>Recommended papers</h2>
+  </div>
+  <a href="{% url 'digests' %}" class="text-link">View all papers →</a>
+</section>
+
+<div class="paper-list">
+  {% include 'core/partials/paper_cards.html' %}
+</div>
+
+<section class="panel interest-strip">
+  <div>
+    <span class="section-kicker">Your research profile</span>
+    <h2>Interests shaping your recommendations</h2>
+  </div>
+  <div class="interest-chips">
+    <span>Bioinformatics</span>
+    <span>Immunology</span>
+    <span>Neural networks</span>
+    <span>Organic chemistry</span>
+    <span>Oceanography</span>
+  </div>
+  <a href="{% url 'preferences' %}" class="button subtle">Edit preferences</a>
+</section>
 {% endblock %}
 
 {% block scripts %}
-    {{ block.super }}
-    <script>
-      const day_hour = new Date().getHours();
-      let greeting = ""
+<script>
+  (function () {
+    const hour = new Date().getHours();
+    const greeting = document.getElementById("greeting");
+    if (greeting) {
+      greeting.textContent = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+    }
 
-      if (day_hour >= 0 && day_hour < 12) {
-        greeting = "Good morning"
-      } else if (day_hour >= 12 && day_hour < 18) {
-        greeting = "Good afternoon"
-      } else if (day_hour >= 18 && day_hour <= 23) {
-        greeting = "Good evening"
-      }
+    const dismiss = document.getElementById("dismiss-banner");
+    const banner = document.getElementById("update-banner");
+    if (dismiss && banner) {
+      dismiss.addEventListener("click", function () {
+        banner.remove();
+      });
+    }
 
-      document.getElementById("greeting").innerText = greeting;
-    </script>
-  {% endblock %}
+    const showUpdates = document.getElementById("show-updates");
+    if (showUpdates) {
+      showUpdates.addEventListener("click", function () {
+        this.textContent = "You’re up to date";
+        this.disabled = true;
+      });
+    }
 
+    const refresh = document.getElementById("refresh-button");
+    if (refresh) {
+      refresh.addEventListener("click", function () {
+        this.innerHTML = "<span>↻</span> Checking research…";
+        setTimeout(function () {
+          refresh.innerHTML = "<span>✓</span> Research checked";
+        }, 900);
+      });
+    }
+  })();
+</script>
+{% endblock %}

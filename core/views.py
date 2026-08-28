@@ -76,11 +76,28 @@ def user_logout(request):
 
 @login_required(login_url="login")
 def dashboard(request):
-    """Render organization cards, recent runs, and status totals."""
+    """Render the static research intelligence dashboard preview."""
+    return render(request, "core/dashboard.html", {"page": "dashboard"})
 
-    return render(request, "core/dashboard.html", {
-        "page": "dashboard"
-    })
+
+@login_required(login_url="login")
+def digests(request):
+    return render(request, "core/digests.html", {"page": "digests"})
+
+
+@login_required(login_url="login")
+def saved_papers(request):
+    return render(request, "core/saved_papers.html", {"page": "saved"})
+
+
+@login_required(login_url="login")
+def preferences(request):
+    return render(request, "core/preferences.html", {"page": "preferences"})
+
+
+@login_required(login_url="login")
+def settings_page(request):
+    return render(request, "core/settings.html", {"page": "settings"})
 
 
 # @login_required(login_url="login")

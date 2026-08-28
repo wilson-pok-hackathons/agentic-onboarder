@@ -1,0 +1,123 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Digests · Relay Scholars{% endblock %}
+{% block crumb %}Digests{% endblock %}
+
+{% block content %}
+<section class="page-heading">
+  <div>
+    <p class="kicker">YOUR RESEARCH, DISTILLED</p>
+    <h1>Research digests</h1>
+    <p>Focused briefings built around the questions and fields you care about.</p>
+  </div>
+  <button class="button primary" type="button">✦ Generate latest digest</button>
+</section>
+
+<div class="filter-bar">
+  <div class="search-box">
+    ⌕
+    <input type="search" placeholder="Search digests" aria-label="Search digests">
+  </div>
+  <select aria-label="Filter by topic">
+    <option>All topics</option>
+    <option>Bioinformatics</option>
+    <option>Immunology</option>
+  </select>
+  <select aria-label="Sort digests">
+    <option>Newest first</option>
+    <option>Oldest first</option>
+  </select>
+  <div class="view-toggle">
+    <button class="active" type="button" aria-label="Grid view">▦</button>
+    <button type="button" aria-label="List view">☷</button>
+  </div>
+</div>
+
+<section class="featured-digest panel" id="digest-detail">
+  <div class="featured-visual">
+    <span>WEEKLY BRIEFING</span>
+    <strong>28</strong>
+    <small>AUG · 2026</small>
+    <div class="orbit"></div>
+  </div>
+  <div class="featured-copy">
+    <div class="paper-tags">
+      <span class="open-access">Latest digest</span>
+      <span>5 topics</span>
+    </div>
+    <h2>Foundation models move deeper into the life sciences</h2>
+    <p>Protein language models, spatial biology, and multimodal clinical systems dominated this week’s most relevant research.</p>
+    <div class="digest-numbers">
+      <span><strong>42</strong> papers reviewed</span>
+      <span><strong>12</strong> selected for you</span>
+      <span><strong>18m</strong> estimated read</span>
+    </div>
+    <a class="button dark" href="#digest-detail">Open weekly briefing →</a>
+  </div>
+</section>
+
+<section class="section-heading">
+  <div>
+    <span class="section-kicker">Archive</span>
+    <h2>Previous digests</h2>
+  </div>
+  <span class="muted-copy">12 briefings</span>
+</section>
+
+<div class="digest-grid">
+  <article class="panel digest-card">
+    <div class="digest-date">
+      <strong>21</strong>
+      <span>AUG</span>
+    </div>
+    <span class="pill">Weekly</span>
+    <h3>From molecular design to immune discovery</h3>
+    <p>New methods connect protein generation with validation across biological systems.</p>
+    <div class="topic-row">
+      <span>Bioinformatics</span>
+      <span>Immunology</span>
+      <span>+2</span>
+    </div>
+    <footer>
+      <span>9 selected from 36</span>
+      <a href="#">Open →</a>
+    </footer>
+  </article>
+
+  <article class="panel digest-card">
+    <div class="digest-date coral">
+      <strong>14</strong>
+      <span>AUG</span>
+    </div>
+    <span class="pill">Weekly</span>
+    <h3>Neural operators reshape scientific modeling</h3>
+    <p>Surrogate models are improving resolution across ocean and molecular simulations.</p>
+    <div class="topic-row">
+      <span>Neural networks</span>
+      <span>Oceanography</span>
+    </div>
+    <footer>
+      <span>11 selected from 51</span>
+      <a href="#">Open →</a>
+    </footer>
+  </article>
+
+  <article class="panel digest-card">
+    <div class="digest-date blue-bg">
+      <strong>07</strong>
+      <span>AUG</span>
+    </div>
+    <span class="pill">Weekly</span>
+    <h3>Research signals worth watching this month</h3>
+    <p>A cross-field look at methods gaining momentum across your interests.</p>
+    <div class="topic-row">
+      <span>Monthly trends</span>
+      <span>5 fields</span>
+    </div>
+    <footer>
+      <span>15 selected from 64</span>
+      <a href="#">Open →</a>
+    </footer>
+  </article>
+</div>
+{% endblock %}
